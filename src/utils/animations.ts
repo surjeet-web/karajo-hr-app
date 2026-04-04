@@ -1,7 +1,28 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing } from 'react-native';
+import { Animated, Easing, type ViewStyle } from 'react-native';
 
-export const useFadeIn = (duration = 400, delay = 0) => {
+type Direction = 'up' | 'down' | 'left' | 'right';
+
+interface AnimationStyle {
+  transform: Array<Record<string, Animated.Value | number>>;
+  opacity: Animated.Value;
+}
+
+interface StaggerAnimationStyle {
+  transform: Array<{ translateY: Animated.Value } | { scale: Animated.Value }>;
+  opacity: Animated.Value;
+}
+
+interface PressAnimationReturn {
+  animatedStyle: {
+    transform: Array<{ scale: Animated.Value }>;
+    opacity: Animated.Value;
+  };
+  onPressIn: () => void;
+  onPressOut: () => void;
+}
+
+export const useFadeIn = (duration = 400, delay = 0): Animated.Value => {
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -19,7 +40,7 @@ export const useFadeIn = (duration = 400, delay = 0) => {
   return opacity;
 };
 
-export const useSlideIn = (direction = 'up', distance = 30, duration = 500, delay = 0) => {
+export const useSlideIn = (direction: Direction = 'up', distance = 30, duration = 500, delay = 0): AnimationStyle => {
   const translate = useRef(new Animated.Value(direction === 'up' ? distance : direction === 'down' ? -distance : direction === 'left' ? distance : -distance)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -46,7 +67,7 @@ export const useSlideIn = (direction = 'up', distance = 30, duration = 500, dela
   return { transform: [{ translateX: direction === 'left' || direction === 'right' ? translate : 0 }, { translateY: direction === 'up' || direction === 'down' ? translate : 0 }], opacity };
 };
 
-export const useScaleIn = (duration = 400, delay = 0) => {
+export const useScaleIn = (duration = 400, delay = 0): AnimationStyle => {
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -73,7 +94,7 @@ export const useScaleIn = (duration = 400, delay = 0) => {
   return { transform: [{ scale }], opacity };
 };
 
-export const usePulse = (repeat = true) => {
+export const usePulse = (repeat = true): { transform: Array<{ scale: Animated.Value }> } => {
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -91,7 +112,7 @@ export const usePulse = (repeat = true) => {
   return { transform: [{ scale }] };
 };
 
-export const useStaggerList = (count, baseDelay = 80, direction = 'up') => {
+export const useStaggerList = (count: number, baseDelay = 80, direction: Direction = 'up'): StaggerAnimationStyle[] => {
   const animations = useRef(
     Array.from({ length: count }, () => ({
       translate: new Animated.Value(direction === 'up' ? 20 : direction === 'down' ? -20 : 0),
@@ -118,7 +139,7 @@ export const useStaggerList = (count, baseDelay = 80, direction = 'up') => {
   }));
 };
 
-export const usePressAnimation = () => {
+export const usePressAnimation = (): PressAnimationReturn => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
 

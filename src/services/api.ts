@@ -5,35 +5,70 @@ const API_BASE_URL = __DEV__ ? '/api' : 'https://api.karajo.com/api';
 const TOKEN_KEY = '@karajo_auth_token';
 const REFRESH_TOKEN_KEY = '@karajo_refresh_token';
 
+export interface ApiResponse<T = unknown> {
+  data?: T;
+  message?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+export interface ApiRequestOptions {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+  requiresAuth?: boolean;
+}
+
+export interface RefreshTokensResponse {
+  token: string;
+  refreshToken: string;
+}
+
+export class ApiError extends Error {
+  public statusCode: number;
+  public data: unknown;
+
+  constructor(message: string, statusCode: number, data?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.data = data;
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+}
+
 class ApiService {
+  private baseURL: string;
+  private timeout: number;
+
   constructor() {
     this.baseURL = API_BASE_URL;
     this.timeout = 15000;
   }
 
-  async getToken() {
+  async getToken(): Promise<string | null> {
     return await AsyncStorage.getItem(TOKEN_KEY);
   }
 
-  async getRefreshToken() {
+  async getRefreshToken(): Promise<string | null> {
     return await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
-  async setTokens(token, refreshToken) {
+  async setTokens(token: string, refreshToken?: string): Promise<void> {
     await AsyncStorage.setItem(TOKEN_KEY, token);
     if (refreshToken) {
       await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     }
   }
 
-  async clearTokens() {
+  async clearTokens(): Promise<void> {
     await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY]);
   }
 
-  async request(endpoint, options = {}) {
+  async request<T = ApiResponse>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
     const { method = 'GET', body, headers = {}, requiresAuth = true } = options;
 
-    const defaultHeaders = {
+    const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
@@ -45,7 +80,7 @@ class ApiService {
       }
     }
 
-    const config = {
+    const config: RequestInit = {
       method,
       headers: { ...defaultHeaders, ...headers },
     };
@@ -67,31 +102,31 @@ class ApiService {
         const refreshed = await this.refreshToken();
         if (refreshed) {
           const newToken = await this.getToken();
-          config.headers['Authorization'] = `Bearer ${newToken}`;
+          (config.headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
           const retryController = new AbortController();
           const retryTimeout = setTimeout(() => retryController.abort(), this.timeout);
           config.signal = retryController.signal;
           const retryResponse = await fetch(url, config);
           clearTimeout(retryTimeout);
-          return this.handleResponse(retryResponse);
+          return this.handleResponse<T>(retryResponse);
         }
         await this.clearTokens();
         throw new ApiError('Session expired. Please login again.', 401);
       }
 
-      return this.handleResponse(response);
+      return this.handleResponse<T>(response);
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
+      if ((error as Error).name === 'AbortError') {
         throw new ApiError('Request timed out. Please check your connection.', 408);
       }
       throw error;
     }
   }
 
-  async handleResponse(response) {
+  async handleResponse<T = ApiResponse>(response: Response): Promise<T> {
     const contentType = response.headers.get('content-type');
-    let data;
+    let data: unknown;
 
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
@@ -101,16 +136,16 @@ class ApiService {
 
     if (!response.ok) {
       throw new ApiError(
-        data?.message || data?.error || `HTTP ${response.status}`,
+        (data as Record<string, string>)?.message || (data as Record<string, string>)?.error || `HTTP ${response.status}`,
         response.status,
         data
       );
     }
 
-    return data;
+    return data as T;
   }
 
-  async refreshToken() {
+  async refreshToken(): Promise<boolean> {
     try {
       const refreshToken = await this.getRefreshToken();
       if (!refreshToken) return false;
@@ -122,7 +157,7 @@ class ApiService {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as RefreshTokensResponse;
         await this.setTokens(data.token, data.refreshToken);
         return true;
       }
@@ -132,29 +167,29 @@ class ApiService {
     }
   }
 
-  get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'GET' });
+  get<T = ApiResponse>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  post(endpoint, body, options = {}) {
-    return this.request(endpoint, { ...options, method: 'POST', body });
+  post<T = ApiResponse>(endpoint: string, body?: unknown, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'POST', body });
   }
 
-  put(endpoint, body, options = {}) {
-    return this.request(endpoint, { ...options, method: 'PUT', body });
+  put<T = ApiResponse>(endpoint: string, body?: unknown, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body });
   }
 
-  patch(endpoint, body, options = {}) {
-    return this.request(endpoint, { ...options, method: 'PATCH', body });
+  patch<T = ApiResponse>(endpoint: string, body?: unknown, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'PATCH', body });
   }
 
-  delete(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'DELETE' });
+  delete<T = ApiResponse>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
-  async uploadFile(endpoint, formData, options = {}) {
+  async uploadFile<T = ApiResponse>(endpoint: string, formData: FormData, options: ApiRequestOptions = {}): Promise<T> {
     const token = await this.getToken();
-    const headers = {};
+    const headers: Record<string, string> = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -165,19 +200,9 @@ class ApiService {
       body: formData,
     });
 
-    return this.handleResponse(response);
-  }
-}
-
-class ApiError extends Error {
-  constructor(message, statusCode, data) {
-    super(message);
-    this.name = 'ApiError';
-    this.statusCode = statusCode;
-    this.data = data;
+    return this.handleResponse<T>(response);
   }
 }
 
 export const api = new ApiService();
-export { ApiError };
 export default api;

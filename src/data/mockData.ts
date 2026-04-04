@@ -1,4 +1,591 @@
-export const currentUser = {
+// ============================
+// TYPE INTERFACES
+// ============================
+
+export interface User {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  avatar?: string;
+  email: string;
+  phone: string;
+  joinDate: string;
+  salary?: {
+    basic: number;
+    hra: number;
+    allowances: number;
+    deductions: number;
+    tax: number;
+  };
+  manager?: string;
+  status?: string;
+}
+
+export interface AttendanceToday {
+  status: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  totalHours: string;
+  workSchedule: string;
+  isOnTime: boolean;
+}
+
+export interface AttendanceHistoryRecord {
+  date: string;
+  day?: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  totalDuration?: string;
+  totalHours: number;
+  status: string;
+  location?: string | null;
+  overtime?: number;
+}
+
+export interface MonthlySummary {
+  productivityScore: number;
+  scoreChange: string;
+  totalHours: string;
+  hoursChange: string;
+  workDays: number;
+  onTimeDays: number;
+  avgClockIn: string;
+  earlyBy: string;
+  overtime: string;
+  overtimeStatus: string;
+  leaveTaken: number;
+  leaveType: string;
+  lateArrivals: number;
+  lateMinutes: string;
+}
+
+export interface AttendanceData {
+  today: AttendanceToday;
+  history: AttendanceHistoryRecord[];
+  monthlySummary: MonthlySummary;
+  corrections?: AttendanceCorrection[];
+}
+
+export interface LeaveBalance {
+  total: number | null;
+  used: number;
+  remaining: number | null;
+  type?: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface LeaveBalanceMap {
+  annual: LeaveBalance;
+  sick: LeaveBalance;
+  personal: LeaveBalance;
+}
+
+export interface LeaveRequest {
+  id: number;
+  type: string;
+  subtype?: string;
+  dates: string;
+  days: number;
+  status: string;
+  date?: string;
+  month?: string;
+  startDate?: string;
+  endDate?: string;
+  reason?: string;
+  appliedOn?: string;
+  delegate?: string | null;
+  documents?: string[];
+}
+
+export interface LeaveData {
+  balance: LeaveBalanceMap;
+  balances?: LeaveBalance[];
+  currentRequests: LeaveRequest[];
+  requests?: LeaveRequest[];
+  history: LeaveRequest[];
+  nextId?: number;
+}
+
+export interface Activity {
+  id?: number;
+  title: string;
+  project: string;
+  duration: string;
+  time: string;
+  category?: string;
+  date?: string;
+}
+
+export interface ActivityDay {
+  day: string;
+  total: string;
+  activities: Activity[];
+}
+
+export interface ActivityWeek {
+  period: string;
+  week: string;
+  hours: string;
+  status: string;
+}
+
+export interface ActivityToday {
+  date: string;
+  total: string;
+  activities: Activity[];
+}
+
+export interface ActivityWeekly {
+  period: string;
+  totalLogged: string;
+  workDays: number;
+  weeklyGoal: string;
+  avgDaily: string;
+  overtime: string;
+  overtimeStatus: string;
+  days: ActivityDay[];
+}
+
+export interface ActivityMonthly {
+  period: string;
+  totalLogged: string;
+  workDays: number;
+  regular: string;
+  overtime: string;
+  weeks: ActivityWeek[];
+}
+
+export interface ActivityData {
+  today: ActivityToday;
+  weekly: ActivityWeekly;
+  monthly: ActivityMonthly;
+  items?: Activity[];
+  nextId?: number;
+  submissions?: TimesheetSubmission[];
+}
+
+export interface PermissionRequest {
+  id: number;
+  title: string;
+  type: string;
+  date: string;
+  time: string;
+  duration: string | number;
+  status: string;
+  month?: string;
+  startTime?: string;
+  endTime?: string;
+  reason?: string;
+  appliedOn?: string;
+}
+
+export interface PermissionData {
+  summary: {
+    totalHours: string;
+    approved: number;
+  };
+  totalHoursUsed?: number;
+  monthlyAllowance?: number;
+  requests: PermissionRequest[];
+  nextId?: number;
+}
+
+export interface OvertimeRequest {
+  id: number;
+  date: string;
+  reason: string;
+  time: string;
+  duration: string | number;
+  status: string;
+  startTime?: string;
+  endTime?: string;
+  appliedOn?: string;
+}
+
+export interface OvertimeData {
+  summary: {
+    totalApproved: string;
+    change: string;
+  };
+  totalApproved?: number;
+  totalPending?: number;
+  requests: OvertimeRequest[];
+  nextId?: number;
+}
+
+export interface Payslip {
+  id: number;
+  month: string;
+  amount?: string;
+  paidOn: string;
+  status: string;
+  type?: string;
+  period?: string;
+  basic?: number;
+  hra?: number;
+  allowances?: number;
+  overtime?: number;
+  bonus?: number;
+  deductions?: number;
+  tax?: number;
+  netPay?: number;
+}
+
+export interface PayslipData {
+  latest: {
+    period: string;
+    amount: string;
+    status: string;
+  };
+  history: Payslip[];
+  payslips?: Payslip[];
+  taxDocuments?: TaxDocument[];
+  payrollRuns?: PayrollRun[];
+}
+
+export interface TaxDocument {
+  id: number;
+  name: string;
+  year: number;
+  type: string;
+  status: string;
+}
+
+export interface PayrollRun {
+  id: string;
+  month: number;
+  year: number;
+  status: string;
+  [key: string]: unknown;
+}
+
+export interface Expense {
+  id: number;
+  title: string;
+  category: string;
+  date: string;
+  amount: number;
+  status: string;
+  icon?: string;
+  month?: string;
+  description?: string;
+  receipt?: string | null;
+}
+
+export interface ExpenseTimeline {
+  status: string;
+  date: string;
+  by: string;
+  active?: boolean;
+}
+
+export interface ExpenseDetail {
+  id: string;
+  amount: number;
+  category: string;
+  merchant: string;
+  date: string;
+  description: string;
+  attachment: {
+    name: string;
+    size: string;
+    uploaded: string;
+  };
+  timeline: ExpenseTimeline[];
+}
+
+export interface ExpenseData {
+  summary: {
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  expenses: Expense[];
+  detail: ExpenseDetail;
+  requests?: Expense[];
+  nextId?: number;
+}
+
+export interface Penalty {
+  id: number;
+  type: string;
+  date: string;
+  severity: string;
+  status: string;
+  description: string;
+  fine: string | number;
+  issuedBy: string;
+  reference: string;
+  appealDeadline: string;
+}
+
+export interface PenaltyAppeal {
+  id: number;
+  penaltyId: number;
+  type: string;
+  explanation: string;
+  status: string;
+  submittedOn: string;
+  penaltyType?: string;
+}
+
+export interface AppealType {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+export interface PenaltyData {
+  summary: {
+    activePenalties: number;
+    totalFines: string;
+    resolved: number;
+    warningPoints: number;
+  };
+  penalties: Penalty[];
+  appeals: PenaltyAppeal[];
+  appealTypes: AppealType[];
+  records?: Penalty[];
+  nextId?: number;
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  time: string;
+  type: string;
+  unread?: boolean;
+  read?: boolean;
+}
+
+export interface Update {
+  id: number;
+  title: string;
+  message: string;
+  time: string;
+  type: string;
+}
+
+export interface Colleague {
+  id: number;
+  name: string;
+  role: string;
+  avatar: string;
+  status: string;
+}
+
+export interface AiSuggestion {
+  id: number;
+  title: string;
+  icon: string;
+}
+
+export interface AiCategory {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
+export interface AiQuickAction {
+  id: number;
+  title: string;
+  subtitle: string;
+  icon: string;
+}
+
+export interface ActivityCategory {
+  id: string;
+  name: string;
+  icon: string;
+  active: boolean;
+}
+
+export interface Project {
+  id: number;
+  name: string;
+}
+
+export interface LeaveType {
+  id: string;
+  name: string;
+  balance: string;
+  remaining: number | null;
+}
+
+export interface CorrectionReason {
+  id: string;
+  label: string;
+}
+
+export interface Shortcut {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  category: string;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
+  role: string;
+  department: string;
+  manager: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  joinDate: string;
+  status: string;
+  location: string;
+  employmentType: string;
+  rating: number | null;
+  kpiScore: number | null;
+  pendingReviews: number;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  head: string;
+  count: number;
+  budget: string | number;
+  color: string;
+  spent?: number;
+  allocated?: number;
+}
+
+export interface OrgChartNode {
+  name: string;
+  role: string;
+  children?: OrgChartNode[];
+}
+
+export interface OnboardingTask {
+  task: string;
+  done: boolean;
+}
+
+export interface OnboardingChecklist {
+  id: number;
+  title: string;
+  items: OnboardingTask[];
+}
+
+export interface NewHire {
+  id: number;
+  name: string;
+  role: string;
+  department: string;
+  startDate: string;
+  avatar: string;
+  progress: number;
+  buddy: string;
+  status: string;
+}
+
+export interface OnboardingData {
+  newHires: NewHire[];
+  checklist: OnboardingChecklist[];
+}
+
+export interface PerformanceOverview {
+  overallRating: number;
+  totalReviews: number;
+  completedReviews: number;
+  pendingReviews: number;
+  avgKpiScore: number;
+  topPerformers: number;
+  needsImprovement: number;
+}
+
+export interface KPI {
+  id: number;
+  name: string;
+  target: string;
+  current: string;
+  status: string;
+  trend: string;
+  category: string;
+}
+
+export interface Goal {
+  id: number;
+  title: string;
+  progress: number;
+  deadline: string;
+  status: string;
+  priority: string;
+  category: string;
+}
+
+export interface Review {
+  id: number;
+  reviewer: string;
+  type: string;
+  date: string;
+  status: string;
+  rating: number | null;
+  summary: string | null;
+}
+
+export interface Feedback {
+  id: number;
+  from: string;
+  to: string;
+  type: string;
+  date: string;
+  text: string;
+  category: string;
+}
+
+export interface PerformanceData {
+  overview: PerformanceOverview;
+  kpis: KPI[];
+  goals: Goal[];
+  reviews: Review[];
+  feedback: Feedback[];
+}
+
+export interface AttendanceCorrection {
+  id: number;
+  date: string;
+  reason: string;
+  status: string;
+  submittedOn: string;
+  [key: string]: unknown;
+}
+
+export interface TimesheetSubmission {
+  id: number;
+  hours: number | string;
+  period: string;
+  status: string;
+  submittedOn: string;
+  [key: string]: unknown;
+}
+
+export interface BudgetDepartment {
+  id: number;
+  name: string;
+  budget: number;
+  spent: number;
+  allocated: number;
+}
+
+export interface BudgetData {
+  departments: BudgetDepartment[];
+  totalBudget: number;
+  totalSpent: number;
+}
+
+// ============================
+// MOCK DATA EXPORTS
+// ============================
+
+export const currentUser: User = {
   id: 'EMP-2024-889',
   name: 'Sarah Miller',
   role: 'Senior Software Engineer',
@@ -9,7 +596,7 @@ export const currentUser = {
   joinDate: '2022-03-15',
 };
 
-export const attendanceData = {
+export const attendanceData: AttendanceData = {
   today: {
     status: 'checked-out',
     checkIn: '08:32 AM',
@@ -19,10 +606,10 @@ export const attendanceData = {
     isOnTime: true,
   },
   history: [
-    { date: 'Tue, 24 Feb', day: 'Regular Shift', checkIn: '09:00 AM', checkOut: '06:00 PM', totalDuration: '9h 00m', status: 'on-time' },
-    { date: 'Mon, 23 Feb', day: 'Regular Shift', checkIn: '09:45 AM', checkOut: '06:45 PM', totalDuration: '9h 00m', status: 'late' },
-    { date: 'Fri, 20 Feb', day: 'Overtime', checkIn: '09:00 AM', checkOut: '08:30 PM', totalDuration: '11h 30m', status: 'overtime' },
-    { date: 'Thu, 19 Feb', day: 'Sick Leave', checkIn: '-', checkOut: '-', totalDuration: '-', status: 'absent' },
+    { date: 'Tue, 24 Feb', day: 'Regular Shift', checkIn: '09:00 AM', checkOut: '06:00 PM', totalDuration: '9h 00m', status: 'on-time', totalHours: 9 },
+    { date: 'Mon, 23 Feb', day: 'Regular Shift', checkIn: '09:45 AM', checkOut: '06:45 PM', totalDuration: '9h 00m', status: 'late', totalHours: 9 },
+    { date: 'Fri, 20 Feb', day: 'Overtime', checkIn: '09:00 AM', checkOut: '08:30 PM', totalDuration: '11h 30m', status: 'overtime', totalHours: 11.5 },
+    { date: 'Thu, 19 Feb', day: 'Sick Leave', checkIn: '-', checkOut: '-', totalDuration: '-', status: 'absent', totalHours: 0 },
   ],
   monthlySummary: {
     productivityScore: 94,
@@ -42,7 +629,7 @@ export const attendanceData = {
   },
 };
 
-export const leaveData = {
+export const leaveData: LeaveData = {
   balance: {
     annual: { total: 20, used: 8, remaining: 12 },
     sick: { total: 7, used: 2, remaining: 5 },
@@ -60,7 +647,7 @@ export const leaveData = {
   ],
 };
 
-export const activityData = {
+export const activityData: ActivityData = {
   today: {
     date: 'Feb 22, 2026',
     total: '4h 15m',
@@ -107,7 +694,7 @@ export const activityData = {
   },
 };
 
-export const permissionData = {
+export const permissionData: PermissionData = {
   summary: {
     totalHours: '24.5h',
     approved: 12,
@@ -120,7 +707,7 @@ export const permissionData = {
   ],
 };
 
-export const overtimeData = {
+export const overtimeData: OvertimeData = {
   summary: {
     totalApproved: '12.5 Hours',
     change: '15% more than last month',
@@ -133,7 +720,7 @@ export const overtimeData = {
   ],
 };
 
-export const payslipData = {
+export const payslipData: PayslipData = {
   latest: {
     period: 'Feb 1 - Feb 28, 2026',
     amount: '$4,250.00',
@@ -147,7 +734,7 @@ export const payslipData = {
   ],
 };
 
-export const expenseData = {
+export const expenseData: ExpenseData = {
   summary: {
     pending: 1240.00,
     approved: 3500.50,
@@ -177,40 +764,40 @@ export const expenseData = {
   },
 };
 
-export const notifications = [
+export const notifications: Notification[] = [
   { id: 1, title: 'Time to Check In', message: "Your workday has started. Don't forget to record your attendance.", time: '1h ago', type: 'reminder', unread: true },
   { id: 2, title: 'Time Tracking Still Active', message: 'Your work session is still running. Please check if you forgot to check out.', time: '1h ago', type: 'warning', unread: true },
   { id: 3, title: 'December Payslip', message: 'Your payslip for December 2023 is now available for download.', time: '1h ago', type: 'info', unread: true },
-  { id: 4, title: 'New Team Member', message: 'Dimas J. has joined the Design Team. Say hello! 👋', time: '1h ago', type: 'team', unread: true },
+  { id: 4, title: 'New Team Member', message: 'Dimas J. has joined the Design Team. Say hello!', time: '1h ago', type: 'team', unread: true },
   { id: 5, title: 'System Maintenance', message: 'Karajo will under scheduled maintenance tonight from 2:00 AM...', time: '1h ago', type: 'system', unread: true },
   { id: 6, title: 'Leave Request Approved', message: 'Your annual leave for Feb 28 has been approved.', time: '1h ago', type: 'success', unread: true },
 ];
 
-export const updates = [
+export const updates: Update[] = [
   { id: 1, title: 'Leave Request Approved', message: 'Your annual leave for Feb 28 has been...', time: '1h ago', type: 'leave' },
   { id: 2, title: 'Office Announcement', message: 'Office will be closed this Friday for mai...', time: '2h ago', type: 'announcement' },
 ];
 
-export const colleagues = [
+export const colleagues: Colleague[] = [
   { id: 1, name: 'Hanna Jenkins', role: 'Senior Project Manager', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop', status: 'online' },
   { id: 2, name: 'Michael Chen', role: 'UX Designer', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', status: 'online' },
   { id: 3, name: 'David Miller', role: 'QA Lead', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop', status: 'offline' },
   { id: 4, name: 'Emma Wilson', role: 'Product Marketing', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop', status: 'online' },
 ];
 
-export const aiSuggestions = [
+export const aiSuggestions: AiSuggestion[] = [
   { id: 1, title: 'Insurance details', icon: 'shield' },
   { id: 2, title: 'Holiday calendar', icon: 'calendar' },
 ];
 
-export const aiCategories = [
+export const aiCategories: AiCategory[] = [
   { id: 'my-hr', name: 'My HR', active: true },
   { id: 'policies', name: 'Policies', active: false },
   { id: 'benefits', name: 'Benefits', active: false },
   { id: 'career', name: 'Career', active: false },
 ];
 
-export const aiQuickActions = [
+export const aiQuickActions: AiQuickAction[] = [
   { id: 1, title: 'Remaining leave', subtitle: 'Check remaining days', icon: 'calendar-check' },
   { id: 2, title: 'Last payslip', subtitle: 'Last 3 months info', icon: 'file-text' },
   { id: 3, title: 'Remote policy', subtitle: 'Direct reporting line', icon: 'monitor' },
@@ -219,7 +806,7 @@ export const aiQuickActions = [
   { id: 6, title: '2026 Tax docs', subtitle: 'Check next review', icon: 'file' },
 ];
 
-export const activityCategories = [
+export const activityCategories: ActivityCategory[] = [
   { id: 'development', name: 'Development', icon: 'code', active: true },
   { id: 'meeting', name: 'Meeting', icon: 'users', active: false },
   { id: 'admin', name: 'Admin', icon: 'clipboard', active: false },
@@ -227,7 +814,7 @@ export const activityCategories = [
   { id: 'qa', name: 'QA', icon: 'search', active: false },
 ];
 
-export const projects = [
+export const projects: Project[] = [
   { id: 1, name: 'Karajo HRIS Internal Tools' },
   { id: 2, name: 'Project Alpha' },
   { id: 3, name: 'All Hands' },
@@ -236,13 +823,13 @@ export const projects = [
   { id: 6, name: 'Dirga Corp - Mobile App Redesign' },
 ];
 
-export const leaveTypes = [
+export const leaveTypes: LeaveType[] = [
   { id: 'annual', name: 'Annual Leave', balance: '12 Days', remaining: 12 },
   { id: 'sick', name: 'Sick Leave', balance: '5 Days', remaining: 5 },
   { id: 'unpaid', name: 'Unpaid Leave', balance: 'Unlimited', remaining: null },
 ];
 
-export const correctionReasons = [
+export const correctionReasons: CorrectionReason[] = [
   { id: 'forgot-checkin', label: 'Forgot to Check In' },
   { id: 'forgot-checkout', label: 'Forgot to Check Out' },
   { id: 'incorrect-time', label: 'Incorrect Time Record' },
@@ -251,7 +838,7 @@ export const correctionReasons = [
   { id: 'other', label: 'Other' },
 ];
 
-export const penaltyData = {
+export const penaltyData: PenaltyData = {
   summary: {
     activePenalties: 2,
     totalFines: '$150.00',
@@ -266,6 +853,7 @@ export const penaltyData = {
     { id: 5, type: 'Late Submission', date: 'Dec 28, 2025', severity: 'info', status: 'resolved', description: 'Missed quarterly report submission deadline', fine: '$0.00', issuedBy: 'Manager', reference: 'PEN-2025-078', appealDeadline: 'Jan 04, 2026' },
     { id: 6, type: 'Meeting No-Show', date: 'Dec 15, 2025', severity: 'warning', status: 'resolved', description: 'Missed mandatory all-hands meeting without notification', fine: '$0.00', issuedBy: 'HR Department', reference: 'PEN-2025-067', appealDeadline: 'Dec 22, 2025' },
   ],
+  appeals: [],
   appealTypes: [
     { id: 'incorrect-fact', label: 'Incorrect Facts', icon: 'alert-circle' },
     { id: 'medical', label: 'Medical Emergency', icon: 'medical' },
@@ -276,7 +864,7 @@ export const penaltyData = {
   ],
 };
 
-export const shortcuts = [
+export const shortcuts: Shortcut[] = [
   { id: 'attendance', name: 'Attendance', icon: 'calendar', color: '#2563EB', category: 'Time Management' },
   { id: 'leave', name: 'Leave', icon: 'umbrella', color: '#F59E0B', category: 'Time Management' },
   { id: 'overtime', name: 'Overtime', icon: 'clock', color: '#8B5CF6', category: 'Time Management' },
@@ -299,7 +887,7 @@ export const shortcuts = [
   { id: 'feedback', name: 'Feedback', icon: 'chatbubble-ellipses', color: '#6366F1', category: 'People & Performance' },
 ];
 
-export const employees = [
+export const employees: Employee[] = [
   { id: 1, name: 'Sarah Miller', role: 'Senior Software Engineer', department: 'Engineering', manager: 'James Wilson', email: 'sarah.miller@karajo.com', phone: '+1 (555) 123-4567', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop', joinDate: 'Mar 15, 2022', status: 'active', location: 'New York', employmentType: 'Full-time', rating: 4.5, kpiScore: 94, pendingReviews: 2 },
   { id: 2, name: 'James Wilson', role: 'Engineering Manager', department: 'Engineering', manager: 'CTO', email: 'james.wilson@karajo.com', phone: '+1 (555) 234-5678', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop', joinDate: 'Jan 10, 2020', status: 'active', location: 'New York', employmentType: 'Full-time', rating: 4.8, kpiScore: 97, pendingReviews: 5 },
   { id: 3, name: 'Hanna Jenkins', role: 'Senior Project Manager', department: 'Operations', manager: 'COO', email: 'hanna.jenkins@karajo.com', phone: '+1 (555) 345-6789', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', joinDate: 'Jun 01, 2021', status: 'active', location: 'San Francisco', employmentType: 'Full-time', rating: 4.6, kpiScore: 91, pendingReviews: 3 },
@@ -312,7 +900,7 @@ export const employees = [
   { id: 10, name: 'Tom Brown', role: 'DevOps Engineer', department: 'Engineering', manager: 'James Wilson', email: 'tom.brown@karajo.com', phone: '+1 (555) 012-3456', avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=200&h=200&fit=crop', joinDate: 'Aug 30, 2023', status: 'active', location: 'Chicago', employmentType: 'Full-time', rating: 4.5, kpiScore: 92, pendingReviews: 1 },
 ];
 
-export const departments = [
+export const departments: Department[] = [
   { id: 'engineering', name: 'Engineering', head: 'James Wilson', count: 4, budget: '$480,000', color: '#2563EB' },
   { id: 'design', name: 'Design', head: 'Design Lead', count: 1, budget: '$95,000', color: '#8B5CF6' },
   { id: 'marketing', name: 'Marketing', head: 'Marketing Director', count: 1, budget: '$110,000', color: '#EC4899' },
@@ -321,7 +909,7 @@ export const departments = [
   { id: 'finance', name: 'Finance', head: 'CFO', count: 1, budget: '$105,000', color: '#22C55E' },
 ];
 
-export const orgChart = {
+export const orgChart: OrgChartNode = {
   name: 'CEO',
   role: 'Chief Executive Officer',
   children: [
@@ -369,7 +957,7 @@ export const orgChart = {
   ],
 };
 
-export const onboardingData = {
+export const onboardingData: OnboardingData = {
   newHires: [
     { id: 1, name: 'Rachel Green', role: 'Junior Developer', department: 'Engineering', startDate: 'Jan 09, 2024', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&h=200&fit=crop', progress: 65, buddy: 'Sarah Miller', status: 'in-progress' },
     { id: 2, name: 'Tom Brown', role: 'DevOps Engineer', department: 'Engineering', startDate: 'Aug 30, 2023', avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=200&h=200&fit=crop', progress: 100, buddy: 'James Wilson', status: 'completed' },
@@ -382,7 +970,7 @@ export const onboardingData = {
   ],
 };
 
-export const performanceData = {
+export const performanceData: PerformanceData = {
   overview: {
     overallRating: 4.3,
     totalReviews: 24,

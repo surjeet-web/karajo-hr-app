@@ -12,10 +12,399 @@ import {
   employeeService,
   performanceService,
 } from '../services';
+import {
+  calculateLeaveDays,
+  calculateDuration,
+  calculateTotalHours,
+  calculateOvertime,
+  calculateAttendanceStatus,
+  calculateLeaveBalance,
+  calculateBudgetUtilization,
+  calculateProductivityScore,
+  calculateGoalProgress,
+  formatCurrency,
+  formatDuration,
+} from '../utils/calculations';
+import {
+  validateLeaveRequest,
+  validatePermissionRequest,
+  validateOvertimeRequest,
+  validateExpenseRequest,
+  validateActivity,
+  validateCorrection,
+} from '../utils/validators';
+import {
+  createApprovalRequest,
+  approveRequest,
+  rejectRequest,
+  cancelApproval,
+  getPendingApprovals,
+} from '../services/approvalWorkflow';
+import {
+  runPayroll,
+  savePayrollRun,
+  approvePayrollRun,
+  getPayrollSummary,
+  getEmployeePayslip,
+  getDepartmentPayrollSummary,
+  getPayrollTrends,
+  generateW2Form,
+  type PayrollRun as PayrollEngineRun,
+} from '../services/payrollEngine';
+
+// ============================
+// TYPE INTERFACES
+// ============================
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  email: string;
+  phone: string;
+  joinDate: string;
+  avatar: string;
+  salary: {
+    basic: number;
+    hra: number;
+    allowances: number;
+    deductions: number;
+    tax: number;
+  };
+  manager: string;
+  status: string;
+}
+
+export interface AttendanceRecord {
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  totalHours: number;
+  status: string;
+  location: string | null;
+  overtime?: number;
+}
+
+export interface AttendanceCorrection {
+  id: number;
+  date: string;
+  status: string;
+  submittedOn: string;
+  [key: string]: unknown;
+}
+
+export interface AttendanceState {
+  today: AttendanceRecord;
+  history: AttendanceRecord[];
+  corrections: AttendanceCorrection[];
+}
+
+export interface LeaveBalance {
+  type: string;
+  total: number | null;
+  used: number;
+  remaining: number | null;
+  icon: string;
+  color: string;
+}
+
+export interface LeaveRequest {
+  id: number;
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: string;
+  appliedOn: string;
+  delegate: string | null;
+  documents: string[];
+}
+
+export interface LeaveState {
+  balances: LeaveBalance[];
+  requests: LeaveRequest[];
+  nextId: number;
+}
+
+export interface PermissionRequest {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  reason: string;
+  status: string;
+  appliedOn: string;
+}
+
+export interface PermissionState {
+  totalHoursUsed: number;
+  monthlyAllowance: number;
+  requests: PermissionRequest[];
+  nextId: number;
+}
+
+export interface OvertimeRequest {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  reason: string;
+  status: string;
+  appliedOn: string;
+}
+
+export interface OvertimeState {
+  totalApproved: number;
+  totalPending: number;
+  requests: OvertimeRequest[];
+  nextId: number;
+}
+
+export interface Activity {
+  id: number;
+  title: string;
+  project: string;
+  duration: string;
+  time: string;
+  category: string;
+  date: string;
+}
+
+export interface TimesheetSubmission {
+  id: number;
+  status: string;
+  submittedOn: string;
+  hours: number | string;
+  period: string;
+  [key: string]: unknown;
+}
+
+export interface ActivityState {
+  items: Activity[];
+  nextId: number;
+  submissions: TimesheetSubmission[];
+}
+
+export interface Payslip {
+  id: number;
+  month: string;
+  period: string;
+  basic: number;
+  hra: number;
+  allowances: number;
+  overtime: number;
+  bonus: number;
+  deductions: number;
+  tax: number;
+  netPay: number;
+  status: string;
+  paidOn: string;
+}
+
+export interface TaxDocument {
+  id: number;
+  name: string;
+  year: number;
+  type: string;
+  status: string;
+}
+
+export interface PayrollRun {
+  id: number;
+  month: number;
+  year: number;
+  status: string;
+  employeeCount?: number;
+  totalPayroll?: number;
+  totalTax?: number;
+  totalDeductions?: number;
+  totalOvertimePay?: number;
+  totalGross?: number;
+  employees?: unknown[];
+  createdAt?: string;
+  processedAt?: string | null;
+  approvedAt?: string | null;
+  processedBy?: string | null;
+  approvedBy?: string | null;
+  [key: string]: unknown;
+}
+
+export interface PayrollState {
+  payslips: Payslip[];
+  taxDocuments: TaxDocument[];
+  payrollRuns: PayrollRun[];
+}
+
+export interface BudgetDepartment {
+  id: number;
+  name: string;
+  budget: number;
+  spent: number;
+  allocated: number;
+}
+
+export interface BudgetState {
+  departments: BudgetDepartment[];
+  totalBudget: number;
+  totalSpent: number;
+}
+
+export interface Expense {
+  id: number;
+  title: string;
+  category: string;
+  date: string;
+  amount: number;
+  status: string;
+  description: string;
+  receipt: string | null;
+}
+
+export interface ExpenseState {
+  requests: Expense[];
+  nextId: number;
+}
+
+export interface Penalty {
+  id: number;
+  type: string;
+  date: string;
+  severity: string;
+  status: string;
+  description: string;
+  fine: number;
+  issuedBy: string;
+  reference: string;
+  appealDeadline: string;
+}
+
+export interface PenaltyAppeal {
+  id: number;
+  penaltyId: number;
+  type: string;
+  explanation: string;
+  status: string;
+  submittedOn: string;
+}
+
+export interface PenaltyState {
+  records: Penalty[];
+  appeals: PenaltyAppeal[];
+  nextId: number;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
+  role: string;
+  department: string;
+  manager: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  joinDate: string;
+  status: string;
+  location: string;
+  employmentType: string;
+  rating: number;
+  kpiScore: number;
+  pendingReviews: number;
+}
+
+export interface PerformanceOverview {
+  overallRating: number;
+  totalReviews: number;
+  completedReviews: number;
+  pendingReviews: number;
+  avgKpiScore: number;
+  topPerformers: number;
+  needsImprovement: number;
+}
+
+export interface KPI {
+  id: number;
+  name: string;
+  target: string;
+  current: string;
+  status: string;
+  trend: string;
+  category: string;
+}
+
+export interface Goal {
+  id: number;
+  title: string;
+  progress: number;
+  deadline: string;
+  status: string;
+  priority: string;
+  category: string;
+}
+
+export interface Review {
+  id: number;
+  reviewer: string;
+  type: string;
+  date: string;
+  status: string;
+  rating: number;
+  summary: string;
+}
+
+export interface Feedback {
+  id: number;
+  from: string;
+  to: string;
+  type: string;
+  date: string;
+  text: string;
+  category: string;
+}
+
+export interface PerformanceState {
+  overview: PerformanceOverview;
+  kpis: KPI[];
+  goals: Goal[];
+  reviews: Review[];
+  feedback: Feedback[];
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  time: string;
+  type: string;
+  read: boolean;
+}
+
+export interface AppState {
+  user: UserProfile;
+  attendance: AttendanceState;
+  leave: LeaveState;
+  permission: PermissionState;
+  overtime: OvertimeState;
+  activities: ActivityState;
+  payroll: PayrollState;
+  budgets: BudgetState;
+  expenses: ExpenseState;
+  penalties: PenaltyState;
+  employees: Employee[];
+  performance: PerformanceState;
+  notifications: Notification[];
+}
+
+// ============================
+// STATE MANAGEMENT
+// ============================
 
 const STORAGE_KEY = '@karajo_hr_data';
 
-const getDefaultState = () => {
+const getDefaultState = (): AppState => {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
 
@@ -98,6 +487,19 @@ const getDefaultState = () => {
         { id: 1, name: 'W-2 Form 2025', year: 2025, type: 'W-2', status: 'available' },
         { id: 2, name: '1099 Form 2025', year: 2025, type: '1099', status: 'pending' },
       ],
+      payrollRuns: [],
+    },
+    budgets: {
+      departments: [
+        { id: 1, name: 'Engineering', budget: 450000, spent: 380000, allocated: 450000 },
+        { id: 2, name: 'Marketing', budget: 200000, spent: 165000, allocated: 200000 },
+        { id: 3, name: 'Sales', budget: 320000, spent: 290000, allocated: 320000 },
+        { id: 4, name: 'Operations', budget: 280000, spent: 210000, allocated: 280000 },
+        { id: 5, name: 'Design', budget: 150000, spent: 120000, allocated: 150000 },
+        { id: 6, name: 'HR', budget: 80000, spent: 65000, allocated: 80000 },
+      ],
+      totalBudget: 1480000,
+      totalSpent: 1230000,
     },
     expenses: {
       requests: [
@@ -156,33 +558,35 @@ const getDefaultState = () => {
 };
 
 let state = getDefaultState();
-let listeners = new Set();
+let listeners = new Set<(s: AppState) => void>();
 
-export const getState = () => JSON.parse(JSON.stringify(state));
+export const getState = (): AppState => JSON.parse(JSON.stringify(state));
 
-export const subscribe = (listener) => {
+export const subscribe = (listener: (s: AppState) => void): (() => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
 
-const notifyListeners = () => {
+const notifyListeners = (): void => {
   listeners.forEach(listener => listener(state));
 };
 
-export const setState = (updater) => {
-  const newState = typeof updater === 'function' ? updater(state) : updater;
+type StateUpdater = (prev: AppState) => Partial<AppState>;
+
+export const setState = (updater: StateUpdater | Partial<AppState>): void => {
+  const newState = typeof updater === 'function' ? (updater as StateUpdater)(state) : updater;
   state = { ...state, ...newState };
   saveState();
   notifyListeners();
 };
 
-export const resetState = () => {
+export const resetState = (): void => {
   state = getDefaultState();
   saveState();
   notifyListeners();
 };
 
-export const loadState = async () => {
+export const loadState = async (): Promise<void> => {
   try {
     const saved = await AsyncStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -195,7 +599,7 @@ export const loadState = async () => {
   }
 };
 
-export const saveState = async () => {
+export const saveState = async (): Promise<void> => {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
@@ -207,13 +611,10 @@ export const saveState = async () => {
 // ATTENDANCE ACTIONS
 // ============================
 
-export const checkIn = (location = 'Office - New York') => {
+export const checkIn = (location = 'Office - New York'): void => {
   const now = new Date();
   const timeStr = now.toTimeString().slice(0, 5);
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  let status = 'on-time';
-  if (hour > 9 || (hour === 9 && minute > 15)) status = 'late';
+  const status = calculateAttendanceStatus(timeStr);
 
   setState(prev => ({
     attendance: {
@@ -224,23 +625,20 @@ export const checkIn = (location = 'Office - New York') => {
   }));
 };
 
-export const checkOut = () => {
+export const checkOut = (): void => {
   const now = new Date();
   const timeStr = now.toTimeString().slice(0, 5);
   setState(prev => {
     const checkInTime = prev.attendance.today.checkIn;
-    let totalHours = 0;
-    if (checkInTime) {
-      const [inH, inM] = checkInTime.split(':').map(Number);
-      const diff = (now.getHours() * 60 + now.getMinutes()) - (inH * 60 + inM);
-      totalHours = Math.round((diff / 60) * 100) / 100;
-    }
+    const totalHours = calculateTotalHours(checkInTime as string, timeStr);
+    const overtimeHours = calculateOvertime(checkInTime as string, timeStr);
 
-    const todayRecord = {
+    const todayRecord: AttendanceRecord = {
       date: prev.attendance.today.date,
       checkIn: prev.attendance.today.checkIn,
       checkOut: timeStr,
       totalHours,
+      overtime: overtimeHours,
       status: totalHours > 9 ? 'overtime' : prev.attendance.today.status,
       location: prev.attendance.today.location,
     };
@@ -248,15 +646,23 @@ export const checkOut = () => {
     return {
       attendance: {
         ...prev.attendance,
-        today: { ...prev.attendance.today, checkOut: timeStr, totalHours, status: todayRecord.status },
+        today: { ...prev.attendance.today, checkOut: timeStr, totalHours, overtime: overtimeHours, status: todayRecord.status },
         history: [todayRecord, ...prev.attendance.history],
       },
-      notifications: [{ id: Date.now(), title: 'Checked Out', message: `You checked out at ${timeStr}. Total: ${totalHours}h`, time: now.toISOString(), type: 'info', read: false }, ...prev.notifications],
+      notifications: [{ id: Date.now(), title: 'Checked Out', message: `You checked out at ${timeStr}. Total: ${formatDuration(totalHours)}`, time: now.toISOString(), type: 'info', read: false }, ...prev.notifications],
     };
   });
 };
 
-export const submitCorrection = (data) => {
+interface CorrectionData {
+  date: string;
+  [key: string]: unknown;
+}
+
+export const submitCorrection = (data: CorrectionData): void => {
+  const errors = validateCorrection(data);
+  if (errors) throw new Error(Object.values(errors).join(', '));
+
   setState(prev => ({
     attendance: {
       ...prev.attendance,
@@ -270,13 +676,34 @@ export const submitCorrection = (data) => {
 // LEAVE ACTIONS
 // ============================
 
-export const requestLeave = (data) => {
-  const start = new Date(data.startDate);
-  const end = new Date(data.endDate);
-  const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+interface LeaveRequestData {
+  type: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  totalDays?: number;
+  usedDays?: number;
+  delegate?: string;
+  documents?: string[];
+}
+
+export const requestLeave = (data: LeaveRequestData): void => {
+  const errors = validateLeaveRequest(data);
+  if (errors) throw new Error(Object.values(errors).join(', '));
+
+  const days = calculateLeaveDays(data.startDate, data.endDate);
+  const balance = data.type ? {
+    total: data.totalDays || 0,
+    used: data.usedDays || 0,
+    remaining: (data.totalDays || 0) - (data.usedDays || 0),
+  } : null;
+
+  if (balance && balance.remaining < days) {
+    throw new Error(`Insufficient leave balance. Only ${balance.remaining} days remaining.`);
+  }
 
   setState(prev => {
-    const newRequest = {
+    const newRequest: LeaveRequest = {
       id: prev.leave.nextId,
       type: data.type,
       startDate: data.startDate,
@@ -286,11 +713,11 @@ export const requestLeave = (data) => {
       status: 'pending',
       appliedOn: new Date().toISOString().split('T')[0],
       delegate: data.delegate || null,
-      documents: [],
+      documents: data.documents || [],
     };
 
     const updatedBalances = prev.leave.balances.map(b =>
-      b.type === data.type ? { ...b, used: b.used + days, remaining: b.remaining !== null ? b.remaining - days : null } : b
+      b.type === data.type ? { ...b, used: b.used + days, remaining: b.remaining !== null ? Math.max(0, b.remaining - days) : null } : b
     );
 
     return {
@@ -305,7 +732,7 @@ export const requestLeave = (data) => {
   });
 };
 
-export const cancelLeave = (id) => {
+export const cancelLeave = (id: number): void => {
   setState(prev => ({
     leave: {
       ...prev.leave,
@@ -318,10 +745,26 @@ export const cancelLeave = (id) => {
 // PERMISSION ACTIONS
 // ============================
 
-export const requestPermission = (data) => {
+interface PermissionRequestData {
+  date: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+}
+
+export const requestPermission = (data: PermissionRequestData): void => {
+  const errors = validatePermissionRequest(data);
+  if (errors) throw new Error(Object.values(errors).join(', '));
+
+  const duration = calculateDuration(data.startTime, data.endTime);
+
   setState(prev => {
-    const duration = data.duration || 1;
-    const newRequest = {
+    const remaining = prev.permission.monthlyAllowance - prev.permission.totalHoursUsed;
+    if (duration > remaining) {
+      throw new Error(`Insufficient permission hours. Only ${remaining}h remaining.`);
+    }
+
+    const newRequest: PermissionRequest = {
       id: prev.permission.nextId,
       date: data.date,
       startTime: data.startTime,
@@ -338,23 +781,31 @@ export const requestPermission = (data) => {
         totalHoursUsed: prev.permission.totalHoursUsed + duration,
         nextId: prev.permission.nextId + 1,
       },
-      notifications: [{ id: Date.now(), title: 'Permission Requested', message: `${duration}h permission requested for ${data.date}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
+      notifications: [{ id: Date.now(), title: 'Permission Requested', message: `${formatDuration(duration)} permission requested for ${data.date}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
     };
   });
 };
 
-// ============================
-// OVERTIME ACTIONS
-// ============================
+interface OvertimeRequestData {
+  date: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+}
 
-export const requestOvertime = (data) => {
+export const requestOvertime = (data: OvertimeRequestData): void => {
+  const errors = validateOvertimeRequest(data);
+  if (errors) throw new Error(Object.values(errors).join(', '));
+
+  const duration = calculateDuration(data.startTime, data.endTime);
+
   setState(prev => {
-    const newRequest = {
+    const newRequest: OvertimeRequest = {
       id: prev.overtime.nextId,
       date: data.date,
       startTime: data.startTime,
       endTime: data.endTime,
-      duration: data.duration,
+      duration,
       reason: data.reason,
       status: 'pending',
       appliedOn: new Date().toISOString().split('T')[0],
@@ -363,10 +814,10 @@ export const requestOvertime = (data) => {
       overtime: {
         ...prev.overtime,
         requests: [newRequest, ...prev.overtime.requests],
-        totalPending: prev.overtime.totalPending + data.duration,
+        totalPending: prev.overtime.totalPending + duration,
         nextId: prev.overtime.nextId + 1,
       },
-      notifications: [{ id: Date.now(), title: 'Overtime Requested', message: `${data.duration}h overtime requested for ${data.date}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
+      notifications: [{ id: Date.now(), title: 'Overtime Requested', message: `${formatDuration(duration)} overtime requested for ${data.date}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
     };
   });
 };
@@ -375,17 +826,29 @@ export const requestOvertime = (data) => {
 // ACTIVITY ACTIONS
 // ============================
 
-export const addActivity = (data) => {
+interface ActivityData {
+  title: string;
+  project: string;
+  duration: string;
+  time: string;
+  category: string;
+  date?: string;
+}
+
+export const addActivity = (data: ActivityData): void => {
+  const errors = validateActivity(data);
+  if (errors) throw new Error(Object.values(errors).join(', '));
+
   setState(prev => ({
     activities: {
       ...prev.activities,
-      items: [{ id: prev.activities.nextId, ...data }, ...prev.activities.items],
+      items: [{ id: prev.activities.nextId, ...data, date: data.date || new Date().toISOString().split('T')[0] }, ...prev.activities.items],
       nextId: prev.activities.nextId + 1,
     },
   }));
 };
 
-export const updateActivity = (id, data) => {
+export const updateActivity = (id: number, data: Partial<Activity>): void => {
   setState(prev => ({
     activities: {
       ...prev.activities,
@@ -394,7 +857,7 @@ export const updateActivity = (id, data) => {
   }));
 };
 
-export const deleteActivity = (id) => {
+export const deleteActivity = (id: number): void => {
   setState(prev => ({
     activities: {
       ...prev.activities,
@@ -403,7 +866,12 @@ export const deleteActivity = (id) => {
   }));
 };
 
-export const submitTimesheet = (data) => {
+interface TimesheetData {
+  hours: number | string;
+  period: string;
+}
+
+export const submitTimesheet = (data: TimesheetData): void => {
   setState(prev => ({
     activities: {
       ...prev.activities,
@@ -414,25 +882,17 @@ export const submitTimesheet = (data) => {
 };
 
 // ============================
-// EXPENSE ACTIONS
-// ============================
-
-export const submitExpense = (data) => {
-  setState(prev => ({
-    expenses: {
-      ...prev.expenses,
-      requests: [{ id: prev.expenses.nextId, ...data, status: 'pending', appliedOn: new Date().toISOString().split('T')[0] }, ...prev.expenses.requests],
-      nextId: prev.expenses.nextId + 1,
-    },
-    notifications: [{ id: Date.now(), title: 'Expense Submitted', message: `$${data.amount} expense for ${data.category}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
-  }));
-};
-
-// ============================
 // PENALTY ACTIONS
 // ============================
 
-export const appealPenalty = (data) => {
+interface PenaltyAppealData {
+  penaltyId: number;
+  type: string;
+  explanation: string;
+  penaltyType: string;
+}
+
+export const appealPenalty = (data: PenaltyAppealData): void => {
   setState(prev => ({
     penalties: {
       ...prev.penalties,
@@ -446,60 +906,92 @@ export const appealPenalty = (data) => {
 // NOTIFICATION ACTIONS
 // ============================
 
-export const markNotificationRead = (id) => {
+export const markNotificationRead = (id: number): void => {
   setState(prev => ({
     notifications: prev.notifications.map(n => n.id === id ? { ...n, read: true } : n),
   }));
 };
 
-export const markAllNotificationsRead = () => {
+export const markAllNotificationsRead = (): void => {
   setState(prev => ({
     notifications: prev.notifications.map(n => ({ ...n, read: true })),
   }));
 };
 
-export const deleteNotification = (id) => {
+export const deleteNotification = (id: number): void => {
   setState(prev => ({
     notifications: prev.notifications.filter(n => n.id !== id),
   }));
 };
 
 // ============================
-// PERFORMANCE ACTIONS
+// PAYROLL ACTIONS
 // ============================
 
-export const submitReview = (data) => {
+export const createPayrollRun = (month: number, year: number): PayrollEngineRun => {
+  const payrollRun = runPayroll(month, year);
+  savePayrollRun(payrollRun);
+  return payrollRun;
+};
+
+export const approvePayroll = (payrollId: number, approvedBy: string): void => {
+  approvePayrollRun(payrollId, approvedBy);
+};
+
+export const getPayrollData = (month: number, year: number) => {
+  return getPayrollSummary(month, year);
+};
+
+export const getEmployeePayslipData = (employeeId: string, month: number, year: number) => {
+  return getEmployeePayslip(employeeId, month, year);
+};
+
+export const getDepartmentPayroll = (department: string, month: number, year: number) => {
+  return getDepartmentPayrollSummary(department, month, year);
+};
+
+export const getPayrollTrendData = (months = 6) => {
+  return getPayrollTrends(months);
+};
+
+export const generateW2 = (employeeId: string, year: number) => {
+  return generateW2Form(employeeId, year);
+};
+
+// ============================
+// BUDGET ACTIONS
+// ============================
+
+export const updateBudget = (departmentId: number, newBudget: number): void => {
   setState(prev => ({
-    performance: {
-      ...prev.performance,
-      reviews: [{ id: Date.now(), ...data, status: 'completed', date: new Date().toISOString().split('T')[0] }, ...prev.performance.reviews],
+    budgets: {
+      ...prev.budgets,
+      departments: prev.budgets.departments.map(d =>
+        d.id === departmentId ? { ...d, budget: newBudget, allocated: newBudget } : d
+      ),
+      totalBudget: prev.budgets.departments.reduce((sum, d) =>
+        d.id === departmentId ? sum + newBudget : sum + d.budget, 0
+      ),
     },
   }));
 };
 
-export const submitFeedback = (data) => {
+export const addExpenseToBudget = (departmentId: number, amount: number): void => {
   setState(prev => ({
-    performance: {
-      ...prev.performance,
-      feedback: [{ id: Date.now(), ...data, date: new Date().toISOString().split('T')[0] }, ...prev.performance.feedback],
+    budgets: {
+      ...prev.budgets,
+      departments: prev.budgets.departments.map(d =>
+        d.id === departmentId ? { ...d, spent: d.spent + amount } : d
+      ),
+      totalSpent: prev.budgets.totalSpent + amount,
     },
   }));
 };
 
-export const addGoal = (data) => {
-  setState(prev => ({
-    performance: {
-      ...prev.performance,
-      goals: [{ id: Date.now(), ...data, progress: 0, status: 'on-track' }, ...prev.performance.goals],
-    },
-  }));
-};
-
-export const updateGoalProgress = (id, progress) => {
-  setState(prev => ({
-    performance: {
-      ...prev.performance,
-      goals: prev.performance.goals.map(g => g.id === id ? { ...g, progress, status: progress >= 100 ? 'completed' : progress < 30 ? 'behind' : 'on-track' } : g),
-    },
+export const getBudgetUtilization = () => {
+  const currentState = getState();
+  return currentState.budgets.departments.map(d => ({
+    ...d,
+    ...calculateBudgetUtilization(d.spent, d.budget),
   }));
 };

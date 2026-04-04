@@ -1,8 +1,10 @@
 import { Platform } from 'react-native';
 
-export const hapticFeedback = (type = 'light') => {
+export type HapticType = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection';
+
+export const hapticFeedback = (type: HapticType = 'light'): void => {
   if (Platform.OS === 'web') return;
-  
+
   try {
     import('expo-haptics').then(Haptics => {
       switch (type) {
