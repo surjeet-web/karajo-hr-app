@@ -1,9 +1,51 @@
 import React from 'react';
-import { Animated, TouchableOpacity, StyleSheet } from 'react-native';
-import { useFadeIn, useSlideIn, useScaleIn, hapticFeedback } from './hooks';
+import { Animated, TouchableOpacity, StyleSheet, ViewStyle, TextStyle, ReactNode } from 'react-native';
+import { useFadeIn, useSlideIn, useScaleIn, hapticFeedback, AnimationDirection } from './hooks';
 
-export const AnimatedCard = ({ children, style, onPress, delay = 0, index, haptic = true }) => {
-  const fadeIn = useFadeIn(400, delay);
+export type BadgeVariant = 'success' | 'warning' | 'error' | 'info' | 'primary' | 'default';
+
+export interface AnimatedCardProps {
+  children: ReactNode;
+  style?: ViewStyle | ViewStyle[];
+  onPress?: () => void;
+  delay?: number;
+  index?: number;
+  haptic?: boolean;
+}
+
+export interface AnimatedStatCardProps {
+  icon: ReactNode;
+  label: string;
+  value: string | number;
+  color: string;
+  delay?: number;
+}
+
+export interface AnimatedBadgeProps {
+  text: string;
+  variant?: BadgeVariant;
+  delay?: number;
+}
+
+export interface AnimatedListProps {
+  children: ReactNode;
+  staggerDelay?: number;
+}
+
+export interface PulsingIconProps {
+  name: ReactNode;
+  size?: number;
+  color: string;
+  delay?: number;
+}
+
+export interface AnimatedProgressBarProps {
+  progress: number;
+  color?: string;
+  delay?: number;
+}
+
+export const AnimatedCard: React.FC<AnimatedCardProps> = ({ children, style, onPress, delay = 0, haptic = true }) => {
   const slideIn = useSlideIn('up', 400, delay);
 
   if (onPress) {
@@ -29,7 +71,7 @@ export const AnimatedCard = ({ children, style, onPress, delay = 0, index, hapti
   );
 };
 
-export const AnimatedStatCard = ({ icon, label, value, color, delay = 0 }) => {
+export const AnimatedStatCard: React.FC<AnimatedStatCardProps> = ({ icon, label, value, color, delay = 0 }) => {
   const scaleIn = useScaleIn(400, delay);
 
   return (
@@ -41,9 +83,9 @@ export const AnimatedStatCard = ({ icon, label, value, color, delay = 0 }) => {
   );
 };
 
-export const AnimatedBadge = ({ text, variant = 'default', delay = 0 }) => {
+export const AnimatedBadge: React.FC<AnimatedBadgeProps> = ({ text, variant = 'default', delay = 0 }) => {
   const scaleIn = useScaleIn(300, delay);
-  const colors = {
+  const colors: Record<BadgeVariant, string> = {
     success: '#22C55E',
     warning: '#F59E0B',
     error: '#EF4444',
@@ -62,9 +104,8 @@ export const AnimatedBadge = ({ text, variant = 'default', delay = 0 }) => {
   );
 };
 
-export const AnimatedList = ({ children, staggerDelay = 80 }) => {
+export const AnimatedList: React.FC<AnimatedListProps> = ({ children, staggerDelay = 80 }) => {
   const count = React.Children.count(children);
-  const animations = [];
 
   return React.Children.map(children, (child, index) => {
     const delay = index * staggerDelay;
@@ -78,7 +119,7 @@ export const AnimatedList = ({ children, staggerDelay = 80 }) => {
   });
 };
 
-export const PulsingIcon = ({ name, size = 24, color, delay = 0 }) => {
+export const PulsingIcon: React.FC<PulsingIconProps> = ({ name, size = 24, color, delay = 0 }) => {
   const scale = React.useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
@@ -99,7 +140,7 @@ export const PulsingIcon = ({ name, size = 24, color, delay = 0 }) => {
   );
 };
 
-export const AnimatedProgressBar = ({ progress, color = '#2563EB', delay = 0 }) => {
+export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({ progress, color = '#2563EB', delay = 0 }) => {
   const width = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
