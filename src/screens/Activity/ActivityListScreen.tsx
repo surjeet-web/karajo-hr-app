@@ -22,7 +22,7 @@ import { useFadeIn, useSlideIn } from '../../utils/animations';
 export const ActivityListScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<string>('daily');
-  const [currentDate, setCurrentDate] = useState<Date>(new Date($3));
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const formatDate = (date) => {
