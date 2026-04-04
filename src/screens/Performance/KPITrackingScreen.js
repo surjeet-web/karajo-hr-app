@@ -1,22 +1,29 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button, ProgressBar } from '../../components';
+import { Header, Card, Badge, Button, ProgressBar, AnimatedListItem } from '../../components';
 import { performanceData } from '../../data/mockData';
-import { useFadeIn, useSlideIn, useScaleIn, hapticFeedback } from '../../animations/hooks';
-import { AnimatedProgressBar, PulsingIcon } from '../../animations/AnimatedComponents';
+import { useFadeIn, useSlideIn, useScaleIn } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const KPITrackingScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [refreshing, setRefreshing] = useState(false);
   const headerFade = useFadeIn(300);
   const bannerSlide = useSlideIn('up', 400, 100);
   const categories = ['All', ...new Set(performanceData.kpis.map(k => k.category))];
   const filteredKpis = selectedCategory === 'All' ? performanceData.kpis : performanceData.kpis.filter(k => k.category === selectedCategory);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -36,6 +43,7 @@ export const KPITrackingScreen = ({ navigation }) => {
   };
 
   const onTrackCount = performanceData.kpis.filter(k => k.status === 'on-track' || k.status === 'exceeding').length;
+  const avgScore = performanceData.overview.avgKpiScore;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -45,17 +53,30 @@ export const KPITrackingScreen = ({ navigation }) => {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll} contentContainerStyle={styles.catContainer}>
         {categories.map(cat => (
-          <TouchableOpacity key={cat} style={[styles.catChip, selectedCategory === cat && styles.catChipActive]} onPress={() => { hapticFeedback('light'); setSelectedCategory(cat); }} activeOpacity={0.7}>
+          <TouchableOpacity
+            key={cat}
+            style={[styles.catChip, selectedCategory === cat && styles.catChipActive]}
+            onPress={() => { hapticFeedback('light'); setSelectedCategory(cat); }}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`Filter by ${cat}`}
+            accessibilityState={{ selected: selectedCategory === cat }}
+          >
             <Text style={[styles.catChipText, selectedCategory === cat && styles.catChipTextActive]}>{cat}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         <Animated.View style={[styles.summaryBanner, { opacity: bannerSlide.opacity, transform: [{ translateY: bannerSlide.offset }] }]}>
           <PulsingIcon name={<Ionicons name="speedometer" size={24} color={colors.primary} />} delay={200} />
           <View style={styles.summaryText}>
-            <Text style={styles.summaryTitle}>Average KPI Score: 89%</Text>
+            <Text style={styles.summaryTitle}>Average KPI Score: {avgScore}%</Text>
             <Text style={styles.summarySubtitle}>{onTrackCount} of {performanceData.kpis.length} KPIs are on track or exceeding targets</Text>
           </View>
         </Animated.View>
@@ -87,7 +108,7 @@ export const KPITrackingScreen = ({ navigation }) => {
                     <Text style={styles.kpiMetricLabel}>Trend</Text>
                     <View style={styles.trendBadge}>
                       <Ionicons name={getTrendIcon(kpi.trend)} size={14} color={kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary} />
-                      <Text style={[styles.trendText, { color: kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary }]}>{kpi.trend}</Text>
+                      <Text style={[styles.trendText, { color: kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary }]}>{kpi.trend === 'up' ? 'Up' : kpi.trend === 'down' ? 'Down' : 'Stable'}</Text>
                     </View>
                   </View>
                 </View>

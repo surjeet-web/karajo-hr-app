@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -14,9 +14,15 @@ export const EmployeeDirectoryScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
+  const [refreshing, setRefreshing] = useState(false);
   const headerFade = useFadeIn(300);
   const searchSlide = useSlideIn('down', 300, 100);
   const statsSlide = useSlideIn('up', 400, 200);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || emp.role.toLowerCase().includes(searchQuery.toLowerCase());
@@ -57,13 +63,16 @@ export const EmployeeDirectoryScreen = ({ navigation }) => {
             style={[styles.deptChip, selectedDept === dept && styles.deptChipActive]}
             onPress={() => { hapticFeedback('light'); setSelectedDept(dept); }}
             activeOpacity={0.7}
+            accessibilityLabel={`Filter by ${dept} department`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedDept === dept }}
           >
             <Text style={[styles.deptChipText, selectedDept === dept && styles.deptChipTextActive]}>{dept}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
         <Animated.View style={[styles.statsRow, { opacity: statsSlide.opacity, transform: [{ translateY: statsSlide.offset }] }]}>
           {[
             { label: 'Total', value: employees.length, color: colors.text },

@@ -6,13 +6,15 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Badge, StatusTimeline } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 
-export const ActivityDetailScreen = ({ navigation }) => {
+export const ActivityDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  
+  const activity = route.params?.activity;
   const timeline = [
     { status: 'Updated Description', label: 'Request created by', by: 'Sarah Miller', date: 'Feb 28, 09:00 PM' },
-    { status: 'Activity Created', label: 'Reviewed by', by: 'Alex Johnson', date: 'Feb 28, 09:20 PM' },
+    { status: 'Reviewed', label: 'Reviewed by', by: 'James Wilson', date: 'Feb 28, 09:15 PM' },
+    { status: 'Finalized', label: 'Finalized by', by: 'System', date: 'Feb 28, 09:20 PM' },
   ];
 
   return (
@@ -22,14 +24,14 @@ export const ActivityDetailScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerRow}>
           <Badge text="Submitted" variant="info" />
-          <Text style={styles.recordId}>#ACT-8942</Text>
+          <Text style={styles.recordId}>#ACT-{activity?.id || '8942'}</Text>
         </View>
 
-        <Text style={styles.title}>Backend API Refactoring</Text>
+        <Text style={styles.title}>{activity?.title || 'Backend API Refactoring'}</Text>
         
         <View style={styles.projectRow}>
           <Ionicons name="briefcase" size={16} color={colors.textTertiary} />
-          <Text style={styles.projectText}>Project Alpha</Text>
+          <Text style={styles.projectText}>{activity?.project || 'Project Alpha'}</Text>
         </View>
 
         <View style={styles.infoGrid}>
@@ -38,14 +40,14 @@ export const ActivityDetailScreen = ({ navigation }) => {
               <Ionicons name="calendar-outline" size={16} color={colors.textTertiary} />
               <Text style={styles.infoLabel}>DATE</Text>
             </View>
-            <Text style={styles.infoValue}>Feb 24, 2023</Text>
+            <Text style={styles.infoValue}>Feb 24, 2026</Text>
           </View>
           <View style={styles.infoCard}>
             <View style={styles.infoIconRow}>
               <Ionicons name="time-outline" size={16} color={colors.textTertiary} />
               <Text style={styles.infoLabel}>DURATION</Text>
             </View>
-            <Text style={styles.infoValue}>4h 30m</Text>
+            <Text style={styles.infoValue}>{activity?.duration || '4h 30m'}</Text>
           </View>
         </View>
 
@@ -54,12 +56,12 @@ export const ActivityDetailScreen = ({ navigation }) => {
           <View style={styles.timeWindowRow}>
             <View>
               <Text style={styles.timeWindowSublabel}>Start</Text>
-              <Text style={styles.timeWindowValue}>09:00 AM</Text>
+              <Text style={styles.timeWindowValue}>{activity?.time ? activity.time.split(' - ')[0] : '09:00 AM'}</Text>
             </View>
             <View style={styles.timeWindowLine} />
             <View>
               <Text style={styles.timeWindowSublabel}>End</Text>
-              <Text style={styles.timeWindowValue}>01:30 PM</Text>
+              <Text style={styles.timeWindowValue}>{activity?.time ? activity.time.split(' - ')[1] : '01:30 PM'}</Text>
             </View>
           </View>
         </View>
@@ -67,8 +69,12 @@ export const ActivityDetailScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>DESCRIPTION</Text>
           <Text style={styles.description}>
-            Refactored the user authentication endpoints to improve latency. Updated the swagger documentation to reflect changes in the response schema for /auth/login and /auth/verify{'\n\n'}
-            Conducted unit tests on the new middleware and verified 15% improvement in response times during load testing.
+            {activity?.description || (
+              <>
+                Refactored the user authentication endpoints to improve latency. Updated the swagger documentation to reflect changes in the response schema for /auth/login and /auth/verify{'\n\n'}
+                Conducted unit tests on the new middleware and verified 15% improvement in response times during load testing.
+              </>
+            )}
           </Text>
         </View>
 

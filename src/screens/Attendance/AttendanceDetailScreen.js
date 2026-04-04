@@ -1,14 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Badge, Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { attendanceService } from '../../services';
 
-export const AttendanceDetailScreen = ({ navigation }) => {
+export const AttendanceDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { record } = route?.params || {};
+
+  const displayDate = record?.date || 'Monday, Feb 23, 2023';
+  const displayCheckIn = record?.checkIn || '09:15 AM';
+  const displayCheckOut = record?.checkOut || '06:05 PM';
+  const displayStatus = record?.status || 'late';
+  const displayLocation = record?.location || 'Head Office, Jakarta';
+  const displayTotalHours = record?.totalHours || 8.83;
+
+  const getStatusBadge = () => {
+    switch (displayStatus) {
+      case 'on-time': return { text: 'On Time', variant: 'success' };
+      case 'late': return { text: 'Late - 15 mins', variant: 'warning' };
+      case 'overtime': return { text: 'Overtime', variant: 'primary' };
+      case 'absent': return { text: 'Absent', variant: 'error' };
+      default: return { text: displayStatus, variant: 'default' };
+    }
+  };
+
+  const badge = getStatusBadge();
+  const hours = Math.floor(displayTotalHours);
+  const mins = Math.round((displayTotalHours - hours) * 60);
+  const totalWorkTime = `${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -17,9 +42,9 @@ export const AttendanceDetailScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.dateSection}>
           <Text style={styles.recordLabel}>RECORD FOR</Text>
-          <Text style={styles.dateText}>Monday, Feb 23, 2023</Text>
+          <Text style={styles.dateText}>{displayDate}</Text>
           <View style={styles.badgesRow}>
-            <Badge text="Late - 15 mins" variant="warning" />
+            <Badge text={badge.text} variant={badge.variant} />
             <Badge text="On-site" variant="info" />
           </View>
         </View>
@@ -29,7 +54,7 @@ export const AttendanceDetailScreen = ({ navigation }) => {
             <Text style={styles.timelineTitle}>Timeline</Text>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>TOTAL WORK TIME</Text>
-              <Text style={styles.totalValue}>08h 50m</Text>
+              <Text style={styles.totalValue}>{totalWorkTime}</Text>
             </View>
           </View>
 
@@ -41,13 +66,13 @@ export const AttendanceDetailScreen = ({ navigation }) => {
               <View style={styles.timelineLine} />
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineLabel}>CHECK IN</Text>
-                <Text style={styles.timelineTime}>09:15 AM</Text>
+                <Text style={styles.timelineTime}>{displayCheckIn}</Text>
                 <View style={styles.locationRow}>
                   <Ionicons name="location" size={14} color={colors.textTertiary} />
-                  <Text style={styles.locationText}>Head Office, Jakarta</Text>
+                  <Text style={styles.locationText}>{displayLocation}</Text>
                 </View>
               </View>
-              <Text style={styles.timelineRight}>09:15 AM</Text>
+              <Text style={styles.timelineRight}>{displayCheckIn}</Text>
             </View>
 
             <View style={styles.timelineItem}>
@@ -56,13 +81,13 @@ export const AttendanceDetailScreen = ({ navigation }) => {
               </View>
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineLabel}>CHECK OUT</Text>
-                <Text style={styles.timelineTime}>06:05 PM</Text>
+                <Text style={styles.timelineTime}>{displayCheckOut}</Text>
                 <View style={styles.locationRow}>
                   <Ionicons name="location" size={14} color={colors.textTertiary} />
-                  <Text style={styles.locationText}>Head Office, Jakarta</Text>
+                  <Text style={styles.locationText}>{displayLocation}</Text>
                 </View>
               </View>
-              <Text style={styles.timelineRight}>06:05 PM</Text>
+              <Text style={styles.timelineRight}>{displayCheckOut}</Text>
             </View>
           </View>
         </View>
@@ -70,7 +95,7 @@ export const AttendanceDetailScreen = ({ navigation }) => {
         <View style={styles.mapSection}>
           <View style={styles.mapHeader}>
             <Text style={styles.mapTitle}>Work Location</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => { hapticFeedback('light'); Alert.alert('Map', 'Map view coming soon'); }} activeOpacity={0.7} accessibilityLabel="See location on map">
               <Text style={styles.seeMapText}>See on Map</Text>
             </TouchableOpacity>
           </View>
@@ -86,8 +111,9 @@ export const AttendanceDetailScreen = ({ navigation }) => {
         <Button
           title="Request Correction"
           variant="outline"
-          onPress={() => navigation.navigate('CorrectionReason')}
+          onPress={() => { hapticFeedback('medium'); navigation.navigate('CorrectionReason', { record }); }}
           icon={<Ionicons name="calendar" size={18} color={colors.primary} />}
+          accessibilityLabel="Request attendance correction"
         />
         <Text style={styles.footerNote}>Corrections are subject to HR approval.</Text>
       </View>

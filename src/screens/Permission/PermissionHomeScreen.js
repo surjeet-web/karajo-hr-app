@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -7,15 +7,24 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Card, Badge, Button } from '../../components';
 import { getState, subscribe } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { AnimatedListItem } from '../../components';
 
 export const PermissionHomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
   const [activeTab, setActiveTab] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setAppState(getState());
+    setRefreshing(false);
   }, []);
 
   const { permission } = appState;
@@ -37,13 +46,23 @@ export const PermissionHomeScreen = ({ navigation }) => {
 
       <View style={styles.tabsContainer}>
         {['all', 'pending', 'approved', 'rejected'].map(tab => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.activeTab]} onPress={() => setActiveTab(tab)}>
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => { hapticFeedback('light'); setActiveTab(tab); }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab }}
+            accessibilityLabel={`${tab} permissions`}
+          >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
         <View style={styles.summaryGrid}>
           <Card style={styles.summaryCard} padding="md">
             <Text style={styles.summaryLabel}>MONTHLY ALLOWANCE</Text>
@@ -62,35 +81,56 @@ export const PermissionHomeScreen = ({ navigation }) => {
         </Card>
 
         {filtered.map((request) => (
-          <Card key={request.id} style={styles.requestCard} padding="md">
-            <View style={styles.requestHeader}>
-              <View style={styles.requestLeft}>
-                <View style={styles.requestIcon}>
-                  <Ionicons name="document-text" size={20} color={colors.primary} />
+          <TouchableOpacity
+            key={request.id}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('PermissionReview', { request })}
+            accessibilityRole="button"
+            accessibilityLabel={`Permission request: ${request.reason}, ${request.status}`}
+          >
+            <Card style={styles.requestCard} padding="md">
+              <View style={styles.requestHeader}>
+                <View style={styles.requestLeft}>
+                  <View style={styles.requestIcon}>
+                    <Ionicons name="document-text" size={20} color={colors.primary} />
+                  </View>
+                  <View>
+                    <Text style={styles.requestTitle}>{request.reason}</Text>
+                    <Text style={styles.requestType}>{request.date}</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.requestTitle}>{request.reason}</Text>
-                  <Text style={styles.requestType}>{request.date}</Text>
+                <Badge text={request.status.charAt(0).toUpperCase() + request.status.slice(1)} variant={getStatusVariant(request.status)} size="small" />
+              </View>
+              <View style={styles.requestDetails}>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Time</Text>
+                  <Text style={styles.detailValue}>{request.startTime} - {request.endTime}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Duration</Text>
+                  <Text style={styles.detailValue}>{request.duration}h</Text>
                 </View>
               </View>
-              <Badge text={request.status.charAt(0).toUpperCase() + request.status.slice(1)} variant={getStatusVariant(request.status)} size="small" />
-            </View>
-            <View style={styles.requestDetails}>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Time</Text>
-                <Text style={styles.detailValue}>{request.startTime} - {request.endTime}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Duration</Text>
-                <Text style={styles.detailValue}>{request.duration}h</Text>
-              </View>
-            </View>
-          </Card>
+            </Card>
+          </TouchableOpacity>
         ))}
+
+        {filtered.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={64} color={colors.textTertiary} />
+            <Text style={styles.emptyTitle}>No Permission Records</Text>
+            <Text style={styles.emptySubtitle}>Your permission requests will appear here.</Text>
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Request Permission" icon={<Ionicons name="add" size={20} color={colors.textInverse} />} onPress={() => navigation.navigate('PermissionRequest')} />
+        <Button
+          title="Request Permission"
+          icon={<Ionicons name="add" size={20} color={colors.textInverse} />}
+          onPress={() => { hapticFeedback('heavy'); navigation.navigate('PermissionRequest'); }}
+          accessibilityLabel="Request new permission"
+        />
       </View>
     </View>
   );
@@ -122,4 +162,7 @@ const styles = StyleSheet.create({
   detailLabel: { ...typography.caption, color: colors.textTertiary, marginBottom: spacing.xs },
   detailValue: { ...typography.bodySmall, color: colors.text },
   footer: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  emptyState: { alignItems: 'center', paddingVertical: spacing.xxxxl },
+  emptyTitle: { ...typography.h4, color: colors.text, marginTop: spacing.md },
+  emptySubtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
 });

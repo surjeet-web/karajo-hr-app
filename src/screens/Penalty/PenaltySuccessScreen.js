@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,8 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const PenaltySuccessScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,9 +6,39 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const AttendanceFilterScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [startDate, setStartDate] = useState('Jan 18, 2026');
+  const [endDate, setEndDate] = useState('Feb 18, 2026');
+  const [statusFilters, setStatusFilters] = useState(['Present']);
+  const [shiftFilters, setShiftFilters] = useState(['Regular']);
+  const [locationFilter, setLocationFilter] = useState('Office');
+
+  const toggleStatus = (status) => {
+    setStatusFilters(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
+  };
+
+  const toggleShift = (shift) => {
+    setShiftFilters(prev =>
+      prev.includes(shift) ? prev.filter(s => s !== shift) : [...prev, shift]
+    );
+  };
+
+  const activeCount = statusFilters.length + shiftFilters.length + (locationFilter ? 1 : 0);
+
+  const handleApply = () => {
+    navigation.goBack();
+  };
+
+  const handleClear = () => {
+    setStatusFilters([]);
+    setShiftFilters([]);
+    setLocationFilter(null);
+  };
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -18,7 +48,7 @@ export const AttendanceFilterScreen = ({ navigation }) => {
 
       <View style={styles.header}>
         <Text style={styles.title}>Filter Attendance</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityLabel="Close filter">
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -29,15 +59,15 @@ export const AttendanceFilterScreen = ({ navigation }) => {
           <View style={styles.dateRow}>
             <View style={styles.dateField}>
               <Text style={styles.dateLabel}>Start Date</Text>
-              <TouchableOpacity style={styles.dateInput}>
-                <Text style={styles.dateText}>Jan 18, 2026</Text>
+              <TouchableOpacity style={styles.dateInput} onPress={() => {}} accessibilityLabel="Select start date">
+                <Text style={styles.dateText}>{startDate}</Text>
                 <Ionicons name="calendar" size={20} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
             <View style={styles.dateField}>
               <Text style={styles.dateLabel}>End Date</Text>
-              <TouchableOpacity style={styles.dateInput}>
-                <Text style={styles.dateText}>Feb 18, 2026</Text>
+              <TouchableOpacity style={styles.dateInput} onPress={() => {}} accessibilityLabel="Select end date">
+                <Text style={styles.dateText}>{endDate}</Text>
                 <Ionicons name="calendar" size={20} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
@@ -47,55 +77,81 @@ export const AttendanceFilterScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Attendance Status</Text>
           <View style={styles.chipRow}>
-            <TouchableOpacity style={[styles.chip, styles.chipActive]}>
-              <Ionicons name="checkmark" size={14} color={colors.textInverse} />
-              <Text style={[styles.chipText, styles.chipTextActive]}>Present</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip}>
-              <Text style={styles.chipText}>Late</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip}>
-              <Text style={styles.chipText}>Absent</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip}>
-              <Text style={styles.chipText}>On Leave</Text>
-            </TouchableOpacity>
+            {['Present', 'Late', 'Absent', 'On Leave'].map((status) => {
+              const isActive = statusFilters.includes(status);
+              return (
+                <TouchableOpacity
+                  key={status}
+                  style={[styles.chip, isActive && styles.chipActive]}
+                  onPress={() => { hapticFeedback('light'); toggleStatus(status); }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isActive }}
+                  accessibilityLabel={`${status} ${isActive ? 'selected' : 'not selected'}`}
+                >
+                  {isActive && <Ionicons name="checkmark" size={14} color={colors.textInverse} />}
+                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{status}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Shift Type</Text>
           <View style={styles.chipRow}>
-            <TouchableOpacity style={[styles.chip, styles.chipActive]}>
-              <Ionicons name="checkmark" size={14} color={colors.textInverse} />
-              <Text style={[styles.chipText, styles.chipTextActive]}>Regular</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip}>
-              <Text style={styles.chipText}>Overtime</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.chip}>
-              <Text style={styles.chipText}>Night Shift</Text>
-            </TouchableOpacity>
+            {['Regular', 'Overtime', 'Night Shift'].map((shift) => {
+              const isActive = shiftFilters.includes(shift);
+              return (
+                <TouchableOpacity
+                  key={shift}
+                  style={[styles.chip, isActive && styles.chipActive]}
+                  onPress={() => { hapticFeedback('light'); toggleShift(shift); }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isActive }}
+                  accessibilityLabel={`${shift} ${isActive ? 'selected' : 'not selected'}`}
+                >
+                  {isActive && <Ionicons name="checkmark" size={14} color={colors.textInverse} />}
+                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{shift}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Work Location</Text>
           <View style={styles.locationRow}>
-            <TouchableOpacity style={[styles.locationChip, styles.locationChipActive]}>
-              <Ionicons name="business" size={18} color={colors.primary} />
-              <Text style={[styles.locationText, styles.locationTextActive]}>Office</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.locationChip}>
-              <Ionicons name="home" size={18} color={colors.textSecondary} />
-              <Text style={styles.locationText}>Remote</Text>
-            </TouchableOpacity>
+            {['Office', 'Remote'].map((loc) => {
+              const isActive = locationFilter === loc;
+              return (
+                <TouchableOpacity
+                  key={loc}
+                  style={[styles.locationChip, isActive && styles.locationChipActive]}
+                  onPress={() => setLocationFilter(isActive ? null : loc)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isActive }}
+                  accessibilityLabel={`${loc} ${isActive ? 'selected' : 'not selected'}`}
+                >
+                  <Ionicons name={loc === 'Office' ? 'business' : 'home'} size={18} color={isActive ? colors.primary : colors.textSecondary} />
+                  <Text style={[styles.locationText, isActive && styles.locationTextActive]}>{loc}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Apply Filters (3)" onPress={() => navigation.goBack()} />
+        <View style={styles.footerRow}>
+          <TouchableOpacity onPress={handleClear} accessibilityLabel="Clear all filters">
+            <Text style={styles.clearText}>Clear All</Text>
+          </TouchableOpacity>
+          <Button
+            title={`Apply Filters (${activeCount})`}
+            onPress={handleApply}
+            accessibilityLabel={`Apply ${activeCount} filters`}
+          />
+        </View>
       </View>
     </View>
   );
@@ -126,4 +182,6 @@ const styles = StyleSheet.create({
   locationText: { ...typography.body, color: colors.textSecondary },
   locationTextActive: { color: colors.primary, fontWeight: '600' },
   footer: { padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border },
+  footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  clearText: { ...typography.body, color: colors.textSecondary, fontWeight: '600' },
 });

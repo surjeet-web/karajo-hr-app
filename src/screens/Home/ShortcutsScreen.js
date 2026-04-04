@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,9 +13,15 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { shortcuts } from '../../data/mockData';
+import { AnimatedCard, AnimatedListItem, PulsingIcon } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn, usePressAnimation, useStaggerList } from '../../utils/animations';
 
 export const ShortcutsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const fadeIn = useFadeIn();
+  const allShortcuts = shortcuts.flat ? shortcuts : Object.values(shortcuts.reduce((acc, s) => { if (!acc[s.category]) acc[s.category] = []; acc[s.category].push(s); return acc; }, {})).flat();
+  const staggerAnimations = useStaggerList(allShortcuts.length, 40, 'up');
 
   const groupedShortcuts = shortcuts.reduce((acc, shortcut) => {
     if (!acc[shortcut.category]) {
@@ -51,6 +58,7 @@ export const ShortcutsScreen = ({ navigation }) => {
   };
 
   const handleShortcutPress = (shortcut) => {
+    hapticFeedback('medium');
     switch (shortcut.id) {
       case 'attendance':
         navigation.navigate('AttendanceHistory');
@@ -106,7 +114,7 @@ export const ShortcutsScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Shortcuts</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.goBack(); }} activeOpacity={0.7}>
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -119,12 +127,13 @@ export const ShortcutsScreen = ({ navigation }) => {
           <View key={category} style={styles.categorySection}>
             <Text style={styles.categoryTitle}>{category.toUpperCase()}</Text>
             <View style={styles.shortcutsGrid}>
-              {items.map((shortcut) => (
-                <TouchableOpacity
-                  key={shortcut.id}
-                  style={styles.shortcutItem}
-                  onPress={() => handleShortcutPress(shortcut)}
-                >
+              {items.map((shortcut, index) => (
+                <AnimatedCard key={shortcut.id} index={index} style={styles.shortcutWrapper} onPress={() => handleShortcutPress(shortcut)} activeOpacity={0.7}>
+                  <TouchableOpacity
+                    style={styles.shortcutItem}
+                    onPress={() => handleShortcutPress(shortcut)}
+                    activeOpacity={0.7}
+                  >
                   <View
                     style={[
                       styles.shortcutIcon,
@@ -137,8 +146,9 @@ export const ShortcutsScreen = ({ navigation }) => {
                       color={shortcut.color}
                     />
                   </View>
-                  <Text style={styles.shortcutName}>{shortcut.name}</Text>
-                </TouchableOpacity>
+                    <Text style={styles.shortcutName}>{shortcut.name}</Text>
+                  </TouchableOpacity>
+                </AnimatedCard>
               ))}
             </View>
           </View>
@@ -192,6 +202,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.lg,
   },
+  shortcutWrapper: { marginBottom: spacing.sm },
   shortcutItem: {
     alignItems: 'center',
     width: 70,

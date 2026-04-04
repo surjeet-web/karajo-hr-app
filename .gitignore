@@ -14,3 +14,4 @@ build/
 android/
 ios/
 web-build/
+.env

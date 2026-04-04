@@ -1,16 +1,43 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Button } from '../../components';
+import { Header, Button, AnimatedCard } from '../../components';
 import { activityCategories } from '../../data/mockData';
+import { updateActivity } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
-export const EditActivityScreen = ({ navigation }) => {
+export const EditActivityScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const [description, setDescription] = useState('Refactored the user authentication endpoints to improve latency. Updated the swagger documentation to reflect changes in the response schema for /auth/login and /auth/verify\n\nConducted unit tests on the new middleware and verified 15% improvement in response times during load testing.');
+  const activity = route.params?.activity;
+  const [title, setTitle] = useState(activity?.title || 'Backend API Refactoring');
+  const [selectedProject, setSelectedProject] = useState(activity?.project || 'Project Alpha');
+  const [startTime, setStartTime] = useState(activity?.startTime || '9:00 AM');
+  const [endTime, setEndTime] = useState(activity?.endTime || '10:30 AM');
+  const [selectedCategory, setSelectedCategory] = useState(activity?.category || 'development');
+  const [description, setDescription] = useState(activity?.description || 'Refactored the user authentication endpoints to improve latency. Updated the swagger documentation to reflect changes in the response schema for /auth/login and /auth/verify\n\nConducted unit tests on the new middleware and verified 15% improvement in response times during load testing.');
+
+  const getIconName = (icon) => {
+    const iconMap = { code: 'code-slash', users: 'people', clipboard: 'clipboard', 'pen-tool': 'create', search: 'search' };
+    return iconMap[icon] || 'apps';
+  };
+
+  const handleUpdate = () => {
+    hapticFeedback('heavy');
+    updateActivity(activity?.id, {
+      title,
+      project: selectedProject,
+      startTime,
+      endTime,
+      category: selectedCategory,
+      description,
+    });
+    navigation.goBack();
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -26,14 +53,19 @@ export const EditActivityScreen = ({ navigation }) => {
           <Text style={styles.label}>Activity Title</Text>
           <View style={styles.inputContainer}>
             <Ionicons name="document-text-outline" size={20} color={colors.textTertiary} />
-            <TextInput style={styles.input} value="Backend API Refactoring" />
+            <TextInput
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+              accessibilityLabel="Activity title"
+            />
           </View>
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Project or Client</Text>
-          <TouchableOpacity style={styles.dropdown}>
-            <Text style={styles.dropdownText}>Project Alpha</Text>
+          <TouchableOpacity style={styles.dropdown} onPress={() => Alert.alert('Coming Soon', 'Project selection will be available in the next update.')} activeOpacity={0.7} accessibilityLabel="Select project">
+            <Text style={styles.dropdownText}>{selectedProject}</Text>
             <Ionicons name="chevron-down" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -41,15 +73,15 @@ export const EditActivityScreen = ({ navigation }) => {
         <View style={styles.timeRow}>
           <View style={[styles.field, styles.timeField]}>
             <Text style={styles.label}>Start Time</Text>
-            <TouchableOpacity style={styles.timeInput}>
-              <Text style={styles.timeText}>9:00 AM</Text>
+            <TouchableOpacity style={styles.timeInput} onPress={() => Alert.alert('Coming Soon', 'Time picker will be available in the next update.')} activeOpacity={0.7} accessibilityLabel="Select start time">
+              <Text style={styles.timeText}>{startTime}</Text>
               <Ionicons name="time-outline" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           </View>
           <View style={[styles.field, styles.timeField]}>
             <Text style={styles.label}>End Time</Text>
-            <TouchableOpacity style={styles.timeInput}>
-              <Text style={styles.timeText}>10:30 AM</Text>
+            <TouchableOpacity style={styles.timeInput} onPress={() => Alert.alert('Coming Soon', 'Time picker will be available in the next update.')} activeOpacity={0.7} accessibilityLabel="Select end time">
+              <Text style={styles.timeText}>{endTime}</Text>
               <Ionicons name="time-outline" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           </View>
@@ -66,28 +98,49 @@ export const EditActivityScreen = ({ navigation }) => {
         <View style={styles.field}>
           <Text style={styles.label}>Category</Text>
           <View style={styles.categoriesRow}>
-            <TouchableOpacity style={[styles.categoryChip, styles.activeCategoryChip]}>
-              <Ionicons name="code-slash" size={14} color={colors.textInverse} />
-              <Text style={[styles.categoryText, styles.activeCategoryText]}>Development</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryChip}>
-              <Ionicons name="people" size={14} color={colors.textSecondary} />
-              <Text style={styles.categoryText}>Meeting</Text>
-            </TouchableOpacity>
+            {activityCategories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[styles.categoryChip, selectedCategory === category.id && styles.activeCategoryChip]}
+                onPress={() => {
+                  hapticFeedback('light');
+                  setSelectedCategory(category.id);
+                }}
+                activeOpacity={0.7}
+                accessibilityLabel={`${category.name} category`}
+              >
+                <Ionicons
+                  name={getIconName(category.icon)}
+                  size={14}
+                  color={selectedCategory === category.id ? colors.textInverse : colors.textSecondary}
+                />
+                <Text style={[styles.categoryText, selectedCategory === category.id && styles.activeCategoryText]}>
+                  {category.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Description</Text>
           <View style={styles.textAreaContainer}>
-            <TextInput style={styles.textArea} multiline numberOfLines={6} value={description} onChangeText={setDescription} maxLength={200} />
-            <Text style={styles.charCount}>50/200</Text>
+            <TextInput
+              style={styles.textArea}
+              multiline
+              numberOfLines={6}
+              value={description}
+              onChangeText={setDescription}
+              maxLength={200}
+              accessibilityLabel="Activity description"
+            />
+            <Text style={styles.charCount}>{description.length}/200</Text>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Update Log" onPress={() => navigation.goBack()} style={styles.saveButton} />
+        <Button title="Update Log" onPress={handleUpdate} style={styles.saveButton} accessibilityLabel="Update activity log" />
       </View>
     </View>
   );

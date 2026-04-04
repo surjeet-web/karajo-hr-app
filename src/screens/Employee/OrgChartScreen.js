@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Avatar } from '../../components';
+import { Header, Card, Avatar, AnimatedListItem } from '../../components';
 import { orgChart } from '../../data/mockData';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 const OrgNode = ({ node, depth = 0, isLast = true }) => {
   const [expanded, setExpanded] = useState(depth < 1);
   const hasChildren = node.children && node.children.length > 0;
   const isRoot = depth === 0;
+
+  const toggleExpand = () => {
+    hapticFeedback('light');
+    setExpanded(!expanded);
+  };
 
   return (
     <View style={{ marginLeft: depth > 0 ? spacing.xl : 0 }}>
@@ -22,18 +29,20 @@ const OrgNode = ({ node, depth = 0, isLast = true }) => {
           <View style={[styles.connectorLine, { flex: 1 }]} />
         </View>
       )}
-      <TouchableOpacity style={[styles.nodeCard, { marginLeft: isRoot ? 0 : spacing.md }]} onPress={() => hasChildren && setExpanded(!expanded)}>
-        <View style={styles.nodeContent}>
-          <Avatar name={node.name} size="small" />
-          <View style={styles.nodeInfo}>
-            <Text style={styles.nodeName}>{node.name}</Text>
-            <Text style={styles.nodeRole}>{node.role}</Text>
+      <AnimatedListItem index={depth} haptic={null}>
+        <TouchableOpacity style={[styles.nodeCard, { marginLeft: isRoot ? 0 : spacing.md }]} onPress={toggleExpand} activeOpacity={0.7} disabled={!hasChildren}>
+          <View style={styles.nodeContent}>
+            <Avatar name={node.name} size="small" />
+            <View style={styles.nodeInfo}>
+              <Text style={styles.nodeName}>{node.name}</Text>
+              <Text style={styles.nodeRole}>{node.role}</Text>
+            </View>
+            {hasChildren && (
+              <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textTertiary} />
+            )}
           </View>
-          {hasChildren && (
-            <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textTertiary} />
-          )}
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </AnimatedListItem>
       {expanded && hasChildren && (
         <View style={styles.childrenContainer}>
           {node.children.map((child, index) => (

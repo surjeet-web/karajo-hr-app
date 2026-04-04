@@ -1,20 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button } from '../../components';
+import { Header, Card, Badge, Button, AnimatedCard, AnimatedListItem } from '../../components';
+import { useFadeIn, useSlideIn, useStaggerList } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 import { getState, subscribe } from '../../store';
 
 export const LeaveHomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
+  const [refreshing, setRefreshing] = useState(false);
+  const fadeIn = useFadeIn(400);
+  const slideUp = useSlideIn('up', 20, 500, 100);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setAppState(getState());
+    setRefreshing(false);
   }, []);
 
   const { leave } = appState;
@@ -23,6 +34,7 @@ export const LeaveHomeScreen = ({ navigation }) => {
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const totalUsed = balances.reduce((sum, b) => sum + (b.used || 0), 0);
   const totalRemaining = balances.reduce((sum, b) => sum + (b.remaining || 0), 0);
+  const staggerAnims = useStaggerList(requests.length, 80);
 
   const getStatusVariant = (status) => {
     switch (status) {
@@ -37,11 +49,16 @@ export const LeaveHomeScreen = ({ navigation }) => {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Leave" onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         <Text style={styles.sectionTitle}>Leave Balance</Text>
 
         {balances.map((balance, i) => (
-          <Card key={balance.type} style={styles.balanceCard} padding="lg">
+          <AnimatedCard key={balance.type} style={styles.balanceCard} padding="lg" delay={i * 100}>
             <View style={styles.balanceHeader}>
               <View style={[styles.balanceIcon, { backgroundColor: `${balance.color}15` }]}>
                 <Ionicons name={balance.icon} size={20} color={balance.color} />
@@ -66,7 +83,7 @@ export const LeaveHomeScreen = ({ navigation }) => {
                 </View>
               </>
             )}
-          </Card>
+          </AnimatedCard>
         ))}
 
         <View style={styles.statsGrid}>
@@ -89,13 +106,13 @@ export const LeaveHomeScreen = ({ navigation }) => {
         <View style={styles.requestsSection}>
           <View style={styles.requestsHeader}>
             <Text style={styles.requestsTitle}>Recent Requests</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('LeaveHistory')}>
+            <TouchableOpacity onPress={() => { hapticFeedback('medium'); navigation.navigate('LeaveHistory'); }} activeOpacity={0.7} accessible accessibilityLabel="View all leave requests" accessibilityRole="button">
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
 
-          {requests.map((request) => (
-            <Card key={request.id} style={styles.requestCard} padding="md">
+          {requests.map((request, i) => (
+            <AnimatedListItem key={request.id} style={styles.requestCard} animation={staggerAnims[i]} onPress={() => { hapticFeedback('medium'); }}>
               <View style={styles.requestDate}>
                 <View style={styles.dateBadge}>
                   <Text style={styles.dateMonth}>{new Date(request.startDate).toLocaleString('default', { month: 'short' })}</Text>
@@ -113,13 +130,13 @@ export const LeaveHomeScreen = ({ navigation }) => {
                 <Badge text={request.status.charAt(0).toUpperCase() + request.status.slice(1)} variant={getStatusVariant(request.status)} size="small" />
                 <Text style={styles.appliedDate}>Applied: {request.appliedOn}</Text>
               </View>
-            </Card>
+            </AnimatedListItem>
           ))}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Request Leave" icon={<Ionicons name="add" size={20} color={colors.textInverse} />} onPress={() => navigation.navigate('SelectLeaveType')} />
+        <Button title="Request Leave" icon={<Ionicons name="add" size={20} color={colors.textInverse} />} onPress={() => { hapticFeedback('heavy'); navigation.navigate('SelectLeaveType'); }} accessible accessibilityLabel="Request a new leave" accessibilityRole="button" />
       </View>
     </View>
   );

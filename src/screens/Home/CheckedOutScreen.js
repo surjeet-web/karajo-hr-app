@@ -6,18 +6,24 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Card, Badge } from '../../components';
+import { Card, Badge, AnimatedCard, AnimatedListItem, PulsingIcon } from '../../components';
 import { currentUser, attendanceData, updates } from '../../data/mockData';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn, usePressAnimation, useStaggerList } from '../../utils/animations';
 
 export const CheckedOutScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const today = attendanceData.today;
+  const fadeIn = useFadeIn();
+  const slideIn = useSlideIn('up', 20, 400);
+  const staggerAnimations = useStaggerList(updates.length, 60, 'up');
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -45,7 +51,7 @@ export const CheckedOutScreen = ({ navigation }) => {
             {getGreeting()},{'\n'}{currentUser.name} 👋
           </Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+        <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('Profile'); }} activeOpacity={0.7}>
           <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
           <View style={styles.onlineIndicator} />
         </TouchableOpacity>
@@ -102,7 +108,8 @@ export const CheckedOutScreen = ({ navigation }) => {
           <View style={styles.quickActionsRow}>
             <TouchableOpacity
               style={styles.quickAction}
-              onPress={() => navigation.navigate('AttendanceHistory')}
+              onPress={() => { hapticFeedback('medium'); navigation.navigate('AttendanceHistory'); }}
+              activeOpacity={0.7}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.primaryLighter }]}>
                 <Ionicons name="calendar" size={24} color={colors.primary} />
@@ -112,7 +119,8 @@ export const CheckedOutScreen = ({ navigation }) => {
             
             <TouchableOpacity
               style={styles.quickAction}
-              onPress={() => navigation.navigate('LeaveHome')}
+              onPress={() => { hapticFeedback('medium'); navigation.navigate('LeaveHome'); }}
+              activeOpacity={0.7}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.warningLight }]}>
                 <Ionicons name="umbrella" size={24} color={colors.warning} />
@@ -122,7 +130,8 @@ export const CheckedOutScreen = ({ navigation }) => {
             
             <TouchableOpacity
               style={styles.quickAction}
-              onPress={() => navigation.navigate('PayslipHome')}
+              onPress={() => { hapticFeedback('medium'); navigation.navigate('PayslipHome'); }}
+              activeOpacity={0.7}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
                 <Ionicons name="document-text" size={24} color={colors.success} />
@@ -132,7 +141,8 @@ export const CheckedOutScreen = ({ navigation }) => {
             
             <TouchableOpacity
               style={styles.quickAction}
-              onPress={() => navigation.navigate('Shortcuts')}
+              onPress={() => { hapticFeedback('medium'); navigation.navigate('Shortcuts'); }}
+              activeOpacity={0.7}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.surfaceVariant }]}>
                 <Ionicons name="grid" size={24} color={colors.textSecondary} />
@@ -146,30 +156,32 @@ export const CheckedOutScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Updates</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('AttendanceHistory'); }} activeOpacity={0.7}>
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
           
-          {updates.map((update) => (
-            <Card key={update.id} style={styles.updateCard} padding="md">
-              <View style={styles.updateRow}>
-                <View style={[styles.updateIcon, { backgroundColor: update.type === 'leave' ? colors.successLight : colors.infoLight }]}>
-                  <Ionicons
-                    name={update.type === 'leave' ? 'checkmark-circle' : 'megaphone'}
-                    size={20}
-                    color={update.type === 'leave' ? colors.success : colors.info}
-                  />
+          {updates.map((update, index) => (
+            <AnimatedListItem key={update.id} index={index} style={styles.updateCardWrapper} onPress={() => hapticFeedback('medium')}>
+              <Card style={styles.updateCard} padding="md">
+                <View style={styles.updateRow}>
+                  <View style={[styles.updateIcon, { backgroundColor: update.type === 'leave' ? colors.successLight : colors.infoLight }]}>
+                    <Ionicons
+                      name={update.type === 'leave' ? 'checkmark-circle' : 'megaphone'}
+                      size={20}
+                      color={update.type === 'leave' ? colors.success : colors.info}
+                    />
+                  </View>
+                  <View style={styles.updateContent}>
+                    <Text style={styles.updateTitle}>{update.title}</Text>
+                    <Text style={styles.updateMessage} numberOfLines={1}>
+                      {update.message}
+                    </Text>
+                  </View>
+                  <Text style={styles.updateTime}>{update.time}</Text>
                 </View>
-                <View style={styles.updateContent}>
-                  <Text style={styles.updateTitle}>{update.title}</Text>
-                  <Text style={styles.updateMessage} numberOfLines={1}>
-                    {update.message}
-                  </Text>
-                </View>
-                <Text style={styles.updateTime}>{update.time}</Text>
-              </View>
-            </Card>
+              </Card>
+            </AnimatedListItem>
           ))}
         </View>
       </ScrollView>
@@ -339,8 +351,9 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.text,
   },
+  updateCardWrapper: { marginBottom: spacing.sm },
   updateCard: {
-    marginBottom: spacing.sm,
+    marginBottom: 0,
   },
   updateRow: {
     flexDirection: 'row',

@@ -1,40 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius, shadows } from '../../theme/spacing';
-import { Card, Badge } from '../../components';
+import { Card, Badge, AnimatedCard, AnimatedListItem, PulsingIcon } from '../../components';
 import { getState, subscribe, checkIn, checkOut } from '../../store';
 import { currentUser } from '../../data/mockData';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn, usePressAnimation, useStaggerList } from '../../utils/animations';
 
 export const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  };
+
   const { user, attendance, notifications, leave, permission, overtime } = appState;
   const today = attendance.today;
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const getGreeting = () => {
-    const hour = new Date().getHours();
+    const hour = currentTime.getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
   };
 
   const getCurrentDate = () => {
-    return new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
+    return currentTime.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
   };
 
   const getCurrentTime = () => {
-    return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   };
 
   const formatHours = (hours) => {
@@ -60,6 +75,22 @@ export const HomeScreen = ({ navigation }) => {
     { label: 'Overtime', count: overtime.requests.filter(r => r.status === 'pending').length, screen: 'OvertimeHome' },
   ].filter(item => item.count > 0);
 
+  const fadeIn = useFadeIn();
+  const slideIn = useSlideIn('up', 20, 400);
+  const staggerAnimations = useStaggerList(3, 60, 'up');
+  const checkInPressAnim = usePressAnimation();
+  const checkOutPressAnim = usePressAnimation();
+
+  const handleCheckIn = () => {
+    hapticFeedback('heavy');
+    navigation.navigate('AttendanceLocation');
+  };
+
+  const handleCheckOut = () => {
+    hapticFeedback('heavy');
+    checkOut();
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -69,19 +100,23 @@ export const HomeScreen = ({ navigation }) => {
         </View>
         <View style={styles.headerRight}>
           {unreadCount > 0 && (
-            <TouchableOpacity style={styles.notificationBadge} onPress={() => navigation.navigate('Notifications')}>
+            <TouchableOpacity style={styles.notificationBadge} onPress={() => { hapticFeedback('light'); navigation.navigate('Notifications'); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel={`${unreadCount} unread notifications`} accessibilityRole="button" activeOpacity={0.7}>
               <Ionicons name="notifications" size={18} color={colors.textInverse} />
               <View style={styles.badgeDot}><Text style={styles.badgeText}>{unreadCount}</Text></View>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('Profile'); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="View profile" accessibilityRole="button" activeOpacity={0.7}>
             <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
             <View style={styles.onlineIndicator} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+      >
         <Card style={styles.attendanceCard}>
           <View style={styles.attendanceHeader}>
             <Text style={styles.currentTimeLabel}>CURRENT TIME</Text>
@@ -96,26 +131,30 @@ export const HomeScreen = ({ navigation }) => {
           </View>
 
           {today.status === 'not-checked-in' ? (
-            <TouchableOpacity style={styles.slideButton} onPress={() => { checkIn(); }}>
-              <View style={styles.slideButtonInner}>
-                <Ionicons name="log-in-outline" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.slideButtonText}>Tap to Check In</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.textInverse} />
-            </TouchableOpacity>
+            <Animated.View style={[styles.slideButton, { backgroundColor: colors.primary }, checkInPressAnim.animatedStyle]}>
+              <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: spacing.xs, height: 56 }} onPress={handleCheckIn} onPressIn={checkInPressAnim.onPressIn} onPressOut={checkInPressAnim.onPressOut} activeOpacity={0.7} accessibilityLabel="Check in" accessibilityRole="button" accessibilityHint="Start the attendance check-in process">
+                <View style={styles.slideButtonInner}>
+                  <Ionicons name="log-in-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.slideButtonText}>Tap to Check In</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.textInverse} />
+              </TouchableOpacity>
+            </Animated.View>
           ) : today.checkOut ? (
             <View style={styles.checkedOutBanner}>
               <Ionicons name="checkmark-circle" size={20} color={colors.success} />
               <Text style={styles.checkedOutText}>Checked out at {today.checkOut}</Text>
             </View>
           ) : (
-            <TouchableOpacity style={[styles.slideButton, { backgroundColor: colors.error }]} onPress={() => { checkOut(); }}>
-              <View style={[styles.slideButtonInner, { backgroundColor: colors.surface }]}>
-                <Ionicons name="log-out-outline" size={20} color={colors.error} />
-              </View>
-              <Text style={styles.slideButtonText}>Tap to Check Out</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.textInverse} />
-            </TouchableOpacity>
+            <Animated.View style={[styles.slideButton, { backgroundColor: colors.error }, checkOutPressAnim.animatedStyle]}>
+              <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: spacing.xs, height: 56 }} onPress={handleCheckOut} onPressIn={checkOutPressAnim.onPressIn} onPressOut={checkOutPressAnim.onPressOut} activeOpacity={0.7} accessibilityLabel="Check out" accessibilityRole="button" accessibilityHint="Record your check-out time">
+                <View style={[styles.slideButtonInner, { backgroundColor: colors.surface }]}>
+                  <Ionicons name="log-out-outline" size={20} color={colors.error} />
+                </View>
+                <Text style={styles.slideButtonText}>Tap to Check Out</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.textInverse} />
+              </TouchableOpacity>
+            </Animated.View>
           )}
 
           <Text style={styles.statusText}>Status: {currentStatus.text}</Text>
@@ -150,8 +189,8 @@ export const HomeScreen = ({ navigation }) => {
         {pendingItems.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Pending Requests</Text>
-            {pendingItems.map(item => (
-              <Card key={item.label} style={styles.pendingCard} padding="md" onPress={() => navigation.navigate(item.screen)}>
+            {pendingItems.map((item, index) => (
+              <AnimatedCard key={item.label} index={index} style={styles.pendingCard} padding="md" onPress={() => { hapticFeedback('medium'); navigation.navigate(item.screen); }} activeOpacity={0.7}>
                 <View style={styles.pendingRow}>
                   <View style={[styles.pendingIcon, { backgroundColor: `${colors.warning}15` }]}>
                     <Ionicons name="time" size={18} color={colors.warning} />
@@ -159,7 +198,7 @@ export const HomeScreen = ({ navigation }) => {
                   <Text style={styles.pendingText}>{item.count} {item.label} request{item.count > 1 ? 's' : ''} pending</Text>
                   <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
                 </View>
-              </Card>
+              </AnimatedCard>
             ))}
           </View>
         )}
@@ -173,7 +212,7 @@ export const HomeScreen = ({ navigation }) => {
               { icon: 'document-text', label: 'Payslip', color: colors.success, bg: colors.successLight, screen: 'PayslipHome' },
               { icon: 'grid', label: 'More', color: colors.textSecondary, bg: colors.surfaceVariant, screen: 'Shortcuts' },
             ].map(action => (
-              <TouchableOpacity key={action.label} style={styles.quickAction} onPress={() => navigation.navigate(action.screen)}>
+              <TouchableOpacity key={action.label} style={styles.quickAction} onPress={() => { hapticFeedback('medium'); navigation.navigate(action.screen); }} accessibilityLabel={action.label} accessibilityRole="button" activeOpacity={0.7}>
                 <View style={[styles.quickActionIcon, { backgroundColor: action.bg }]}>
                   <Ionicons name={action.icon} size={24} color={action.color} />
                 </View>
@@ -188,18 +227,20 @@ export const HomeScreen = ({ navigation }) => {
             <Text style={styles.sectionTitle}>Recent Activity</Text>
           </View>
           {attendance.history.slice(0, 3).map((record, i) => (
-            <Card key={i} style={styles.updateCard} padding="md">
-              <View style={styles.updateRow}>
-                <View style={[styles.updateIcon, { backgroundColor: record.status === 'on-time' ? colors.successLight : record.status === 'late' ? colors.warningLight : record.status === 'overtime' ? `${colors.accentPurple}15` : colors.errorLight }]}>
-                  <Ionicons name={record.status === 'absent' ? 'close-circle' : 'calendar-outline'} size={20} color={record.status === 'on-time' ? colors.success : record.status === 'late' ? colors.warning : record.status === 'overtime' ? colors.accentPurple : colors.error} />
+            <AnimatedListItem key={i} index={i} style={styles.updateCard} onPress={() => { hapticFeedback('medium'); navigation.navigate('AttendanceHistory'); }}>
+              <Card style={styles.updateCardInner} padding="md">
+                <View style={styles.updateRow}>
+                  <View style={[styles.updateIcon, { backgroundColor: record.status === 'on-time' ? colors.successLight : record.status === 'late' ? colors.warningLight : record.status === 'overtime' ? `${colors.accentPurple}15` : colors.errorLight }]}>
+                    <Ionicons name={record.status === 'absent' ? 'close-circle' : 'calendar-outline'} size={20} color={record.status === 'on-time' ? colors.success : record.status === 'late' ? colors.warning : record.status === 'overtime' ? colors.accentPurple : colors.error} />
+                  </View>
+                  <View style={styles.updateContent}>
+                    <Text style={styles.updateTitle}>{record.date}</Text>
+                    <Text style={styles.updateMessage}>{record.checkIn ? `${record.checkIn} - ${record.checkOut}` : 'Absent'} • {record.totalHours > 0 ? record.totalHours + 'h' : '-'}</Text>
+                  </View>
+                  <Badge text={record.status} variant={record.status === 'on-time' ? 'success' : record.status === 'late' ? 'warning' : record.status === 'overtime' ? 'primary' : 'error'} size="small" />
                 </View>
-                <View style={styles.updateContent}>
-                  <Text style={styles.updateTitle}>{record.date}</Text>
-                  <Text style={styles.updateMessage}>{record.checkIn ? `${record.checkIn} - ${record.checkOut}` : 'Absent'} • {record.totalHours > 0 ? record.totalHours + 'h' : '-'}</Text>
-                </View>
-                <Badge text={record.status} variant={record.status === 'on-time' ? 'success' : record.status === 'late' ? 'warning' : record.status === 'overtime' ? 'primary' : 'error'} size="small" />
-              </View>
-            </Card>
+              </Card>
+            </AnimatedListItem>
           ))}
         </View>
       </ScrollView>
@@ -245,6 +286,7 @@ const styles = StyleSheet.create({
   quickActionIcon: { width: 56, height: 56, borderRadius: borderRadius.lg, justifyContent: 'center', alignItems: 'center' },
   quickActionText: { ...typography.bodySmall, color: colors.text },
   updateCard: { marginBottom: spacing.sm },
+  updateCardInner: { marginBottom: 0 },
   updateRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   updateIcon: { width: 40, height: 40, borderRadius: borderRadius.md, justifyContent: 'center', alignItems: 'center' },
   updateContent: { flex: 1 },

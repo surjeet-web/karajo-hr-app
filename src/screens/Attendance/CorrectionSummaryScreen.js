@@ -6,9 +6,33 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button, ProgressBar } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { submitCorrection } from '../../store';
+import { correctionReasons } from '../../data/mockData';
+import { attendanceService } from '../../services';
 
-export const CorrectionSummaryScreen = ({ navigation }) => {
+export const CorrectionSummaryScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { selectedReason, checkInTime, checkOutTime, reason } = route?.params || {};
+
+  const reasonLabel = correctionReasons.find(r => r.id === selectedReason)?.label || 'Not specified';
+  const displayReason = reason || 'No additional details provided';
+
+  const handleSubmit = () => {
+    hapticFeedback('heavy');
+    submitCorrection({
+      date: 'Monday, Feb 23, 2023',
+      reason: reasonLabel,
+      checkIn: checkInTime,
+      checkOut: checkOutTime,
+      details: displayReason,
+    });
+    navigation.navigate('CorrectionSubmitted', {
+      checkInTime,
+      checkOutTime,
+      reason: reasonLabel,
+    });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -40,7 +64,7 @@ export const CorrectionSummaryScreen = ({ navigation }) => {
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Check-In Time</Text>
-              <Text style={styles.summaryValue}>09:00 AM</Text>
+              <Text style={styles.summaryValue}>{checkInTime || '09:00 AM'}</Text>
             </View>
           </View>
 
@@ -52,7 +76,19 @@ export const CorrectionSummaryScreen = ({ navigation }) => {
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Check-Out Time</Text>
-              <Text style={styles.summaryValue}>05:00 PM</Text>
+              <Text style={styles.summaryValue}>{checkOutTime || '05:00 PM'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.summaryItem}>
+            <View style={styles.summaryIcon}>
+              <Ionicons name="help-circle" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.summaryInfo}>
+              <Text style={styles.summaryLabel}>Reason</Text>
+              <Text style={styles.summaryValue}>{reasonLabel}</Text>
             </View>
           </View>
 
@@ -63,8 +99,8 @@ export const CorrectionSummaryScreen = ({ navigation }) => {
               <Ionicons name="document-text" size={20} color={colors.primary} />
             </View>
             <View style={styles.summaryInfo}>
-              <Text style={styles.summaryLabel}>Reason</Text>
-              <Text style={styles.summaryValue}>Forgot to check in</Text>
+              <Text style={styles.summaryLabel}>Details</Text>
+              <Text style={styles.summaryValue}>{displayReason}</Text>
             </View>
           </View>
         </View>
@@ -78,7 +114,7 @@ export const CorrectionSummaryScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Submit Correction Request" onPress={() => navigation.navigate('CorrectionSubmitted')} />
+        <Button title="Submit Correction Request" onPress={handleSubmit} accessibilityLabel="Submit correction request" />
       </View>
     </View>
   );

@@ -1,42 +1,53 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Card, Badge } from '../../components';
+import { Card, Badge, AnimatedListItem } from '../../components';
 import { activityData } from '../../data/mockData';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const TimesheetMonthlyScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const monthly = activityData.monthly;
+  const [currentMonthOffset, setCurrentMonthOffset] = useState(0);
+
+  const goPrevMonth = () => {
+    setCurrentMonthOffset(prev => prev + 1);
+  };
+
+  const goNextMonth = () => {
+    setCurrentMonthOffset(prev => Math.max(0, prev - 1));
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={styles.dateNavigator}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={goPrevMonth} activeOpacity={0.7} accessibilityLabel="Previous month">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.dateContainer}>
             <Text style={styles.dateText}>{monthly.period}</Text>
             <Text style={styles.dayText}>Current period</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={goNextMonth} activeOpacity={0.7} accessibilityLabel="Next month">
             <Ionicons name="chevron-forward" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.tabsContainer}>
-        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('ActivityList')}>
+        <TouchableOpacity style={styles.tab} onPress={() => { hapticFeedback('light'); navigation.navigate('ActivityList'); }} activeOpacity={0.7} accessibilityLabel="Daily view">
           <Text style={styles.tabText}>Daily</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('TimesheetWeekly')}>
+        <TouchableOpacity style={styles.tab} onPress={() => { hapticFeedback('light'); navigation.navigate('TimesheetWeekly'); }} activeOpacity={0.7} accessibilityLabel="Weekly view">
           <Text style={styles.tabText}>Weekly</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, styles.activeTab]}>
+        <TouchableOpacity style={[styles.tab, styles.activeTab]} activeOpacity={0.7} accessibilityLabel="Monthly view">
           <Text style={[styles.tabText, styles.activeTabText]}>Monthly</Text>
         </TouchableOpacity>
       </View>
@@ -74,7 +85,10 @@ export const TimesheetMonthlyScreen = ({ navigation }) => {
 
         <View style={styles.weeksSection}>
           {monthly.weeks.map((week, index) => (
-            <TouchableOpacity key={index} style={styles.weekRow} onPress={() => navigation.navigate('ApprovalStatus')}>
+            <AnimatedListItem key={index} index={index} style={styles.weekRow} onPress={() => {
+              hapticFeedback('medium');
+              navigation.navigate('ApprovalStatus');
+            }}>
               <View style={styles.weekDate}>
                 <View style={styles.weekBadge}>
                   <Text style={styles.weekBadgeText}>FEB</Text>
@@ -89,7 +103,7 @@ export const TimesheetMonthlyScreen = ({ navigation }) => {
                 <Text style={styles.weekHours}>{week.hours}</Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
               </View>
-            </TouchableOpacity>
+            </AnimatedListItem>
           ))}
         </View>
       </ScrollView>

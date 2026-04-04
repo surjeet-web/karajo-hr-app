@@ -1,5 +1,6 @@
+import { hapticFeedback } from '../../utils/haptics';
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -33,9 +34,13 @@ export const PermissionRequestScreen = ({ navigation }) => {
   const duration = calcDuration();
 
   const handleSubmit = () => {
-    requestPermission({ date, startTime, endTime, duration: parseFloat(duration), reason });
-    navigation.navigate('PermissionSuccess');
+    if (!reason.trim()) return;
+    const parsedDuration = parseFloat(duration);
+    requestPermission({ date, startTime, endTime, duration: parsedDuration, reason: reason.trim() });
+    navigation.navigate('PermissionSuccess', { date, startTime, endTime, duration: parsedDuration, reason: reason.trim() });
   };
+
+  const isFormValid = reason.trim().length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -60,11 +65,27 @@ export const PermissionRequestScreen = ({ navigation }) => {
         <View style={styles.timeRow}>
           <View style={[styles.field, styles.timeField]}>
             <Text style={styles.label}>Start Time</Text>
-            <TextInput style={styles.timeInputField} value={startTime} onChangeText={setStartTime} keyboardType="numbers-and-punctuation" />
+            <TextInput
+              style={styles.timeInputField}
+              value={startTime}
+              onChangeText={setStartTime}
+              keyboardType="numbers-and-punctuation"
+              placeholder="HH:MM"
+              placeholderTextColor={colors.textTertiary}
+              accessibilityLabel="Start time"
+            />
           </View>
           <View style={[styles.field, styles.timeField]}>
             <Text style={styles.label}>End Time</Text>
-            <TextInput style={styles.timeInputField} value={endTime} onChangeText={setEndTime} keyboardType="numbers-and-punctuation" />
+            <TextInput
+              style={styles.timeInputField}
+              value={endTime}
+              onChangeText={setEndTime}
+              keyboardType="numbers-and-punctuation"
+              placeholder="HH:MM"
+              placeholderTextColor={colors.textTertiary}
+              accessibilityLabel="End time"
+            />
           </View>
         </View>
 
@@ -88,6 +109,7 @@ export const PermissionRequestScreen = ({ navigation }) => {
               value={reason}
               onChangeText={setReason}
               maxLength={200}
+              accessibilityLabel="Reason for permission request"
             />
             <Text style={styles.charCount}>{reason.length}/200</Text>
           </View>
@@ -102,7 +124,12 @@ export const PermissionRequestScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Submit Request" onPress={handleSubmit} disabled={!reason.trim()} />
+        <Button
+          title="Submit Request"
+          onPress={() => { hapticFeedback('heavy'); handleSubmit(); }}
+          disabled={!isFormValid}
+          accessibilityLabel="Submit permission request"
+        />
       </View>
     </View>
   );

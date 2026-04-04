@@ -1,20 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Avatar, Button, ProgressBar } from '../../components';
+import { Header, Card, Avatar, Button, ProgressBar, AnimatedCard, AnimatedListItem } from '../../components';
 import { onboardingData } from '../../data/mockData';
-import { useFadeIn, useSlideIn, useScaleIn, hapticFeedback } from '../../animations/hooks';
+import { useFadeIn, useSlideIn, useScaleIn } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
+
+const cloneChecklist = () =>
+  onboardingData.checklist.map(section => ({
+    ...section,
+    items: section.items.map(item => ({ ...item })),
+  }));
 
 export const OnboardingScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [checklist, setChecklist] = useState(cloneChecklist);
   const headerFade = useFadeIn(300);
   const statsSlide = useSlideIn('up', 400, 100);
   const hiresSlide = useSlideIn('up', 400, 300);
   const checklistSlide = useSlideIn('up', 400, 600);
+
+  const toggleCheckItem = (sectionIndex, itemIndex) => {
+    hapticFeedback('light');
+    setChecklist(prev => {
+      const next = [...prev];
+      const section = { ...next[sectionIndex] };
+      const items = [...section.items];
+      items[itemIndex] = { ...items[itemIndex], done: !items[itemIndex].done };
+      section.items = items;
+      next[sectionIndex] = section;
+      return next;
+    });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -45,31 +66,33 @@ export const OnboardingScreen = ({ navigation }) => {
             const slideIn = useSlideIn('up', 350, 400 + i * 100);
             return (
               <Animated.View key={hire.id} style={[{ opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }], marginBottom: spacing.md }]}>
-                <Card style={styles.hireCard} padding="md">
-                  <View style={styles.hireHeader}>
-                    <View style={styles.hireLeft}>
-                      <Avatar name={hire.name} size="medium" />
-                      <View>
-                        <Text style={styles.hireName}>{hire.name}</Text>
-                        <Text style={styles.hireRole}>{hire.role} • {hire.department}</Text>
+                <AnimatedCard index={i} onPress={() => { hapticFeedback('medium'); navigation.navigate('EmployeeDetail', { employee: hire }); }} activeOpacity={0.7} style={styles.hireCard}>
+                  <Card padding="md" style={{ backgroundColor: 'transparent', borderWidth: 0 }}>
+                    <View style={styles.hireHeader}>
+                      <View style={styles.hireLeft}>
+                        <Avatar name={hire.name} size="medium" />
+                        <View>
+                          <Text style={styles.hireName}>{hire.name}</Text>
+                          <Text style={styles.hireRole}>{hire.role} • {hire.department}</Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                  <View style={styles.hireDetails}>
-                    <View style={styles.hireDetailItem}>
-                      <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
-                      <Text style={styles.hireDetailText}>Starts: {hire.startDate}</Text>
+                    <View style={styles.hireDetails}>
+                      <View style={styles.hireDetailItem}>
+                        <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
+                        <Text style={styles.hireDetailText}>Starts: {hire.startDate}</Text>
+                      </View>
+                      <View style={styles.hireDetailItem}>
+                        <Ionicons name="people-outline" size={14} color={colors.textTertiary} />
+                        <Text style={styles.hireDetailText}>Buddy: {hire.buddy}</Text>
+                      </View>
                     </View>
-                    <View style={styles.hireDetailItem}>
-                      <Ionicons name="people-outline" size={14} color={colors.textTertiary} />
-                      <Text style={styles.hireDetailText}>Buddy: {hire.buddy}</Text>
+                    <View style={styles.progressSection}>
+                      <Text style={styles.progressLabel}>Progress: {hire.progress}%</Text>
+                      <ProgressBar currentStep={hire.progress} totalSteps={100} />
                     </View>
-                  </View>
-                  <View style={styles.progressSection}>
-                    <Text style={styles.progressLabel}>Progress: {hire.progress}%</Text>
-                    <ProgressBar currentStep={hire.progress} totalSteps={100} />
-                  </View>
-                </Card>
+                  </Card>
+                </AnimatedCard>
               </Animated.View>
             );
           })}
@@ -77,7 +100,7 @@ export const OnboardingScreen = ({ navigation }) => {
 
         <Animated.View style={[{ opacity: checklistSlide.opacity, transform: [{ translateY: checklistSlide.offset }] }]}>
           <Text style={styles.sectionTitle}>Onboarding Checklist</Text>
-          {onboardingData.checklist.map((section, i) => {
+          {checklist.map((section, i) => {
             const slideIn = useSlideIn('up', 350, 700 + i * 100);
             const doneCount = section.items.filter(it => it.done).length;
             const totalCount = section.items.length;
@@ -91,12 +114,25 @@ export const OnboardingScreen = ({ navigation }) => {
                   {section.items.map((item, j) => {
                     const itemSlide = useSlideIn('right', 250, 800 + i * 100 + j * 50);
                     return (
-                      <Animated.View key={j} style={[styles.checklistItem, { opacity: itemSlide.opacity, transform: [{ translateX: itemSlide.offset }] }]}>
-                        <View style={[styles.checkCircle, { backgroundColor: item.done ? colors.success : colors.surfaceVariant }]}>
-                          <Ionicons name={item.done ? 'checkmark' : 'ellipse-outline'} size={16} color={item.done ? colors.textInverse : colors.textTertiary} />
-                        </View>
-                        <Text style={[styles.checkText, { color: item.done ? colors.textSecondary : colors.text, textDecorationLine: item.done ? 'line-through' : 'none' }]}>{item.task}</Text>
-                      </Animated.View>
+                      <AnimatedListItem key={j} index={j} haptic={null}>
+                        <Animated.View style={[{ opacity: itemSlide.opacity, transform: [{ translateX: itemSlide.offset }] }]}>
+                          <TouchableOpacity
+                            style={styles.checklistItem}
+                            onPress={() => toggleCheckItem(i, j)}
+                            activeOpacity={0.7}
+                            accessibilityLabel={`${item.done ? 'Uncheck' : 'Check'}: ${item.task}`}
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: item.done }}
+                          >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 }}>
+                              <View style={[styles.checkCircle, { backgroundColor: item.done ? colors.success : colors.surfaceVariant }]}>
+                                <Ionicons name={item.done ? 'checkmark' : 'ellipse-outline'} size={16} color={item.done ? colors.textInverse : colors.textTertiary} />
+                              </View>
+                              <Text style={[styles.checkText, { color: item.done ? colors.textSecondary : colors.text, textDecorationLine: item.done ? 'line-through' : 'none' }]}>{item.task}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        </Animated.View>
+                      </AnimatedListItem>
                     );
                   })}
                 </Card>

@@ -1,12 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  attendanceService,
+  leaveService,
+  permissionService,
+  overtimeService,
+  activityService,
+  payrollService,
+  expenseService,
+  notificationService,
+  penaltyService,
+  employeeService,
+  performanceService,
+} from '../services';
 
 const STORAGE_KEY = '@karajo_hr_data';
 
 const getDefaultState = () => {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
 
   return {
     user: {
@@ -17,6 +28,7 @@ const getDefaultState = () => {
       email: 'sarah.miller@karajo.com',
       phone: '+1 (555) 123-4567',
       joinDate: '2022-03-15',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
       salary: { basic: 5000, hra: 2000, allowances: 1500, deductions: 800, tax: 450 },
       manager: 'James Wilson',
       status: 'active',
@@ -67,6 +79,14 @@ const getDefaultState = () => {
       ],
       nextId: 4,
     },
+    activities: {
+      items: [
+        { id: 1, title: 'Frontend Development', project: 'Karajo HRIS Internal Tools', duration: '3h 15m', time: '1:00 PM - 4:15 PM', category: 'Development', date: '2026-02-28' },
+        { id: 2, title: 'Client Meeting', project: 'Project Alpha', duration: '1h 00m', time: '9:00 AM - 10:00 AM', category: 'Meeting', date: '2026-02-28' },
+      ],
+      nextId: 3,
+      submissions: [],
+    },
     payroll: {
       payslips: [
         { id: 1, month: 'February 2026', period: 'Feb 1 - Feb 28, 2026', basic: 5000, hra: 2000, allowances: 1500, overtime: 450, bonus: 0, deductions: 800, tax: 450, netPay: 7700, status: 'paid', paidOn: '2026-03-01' },
@@ -96,6 +116,36 @@ const getDefaultState = () => {
       ],
       appeals: [],
       nextId: 4,
+    },
+    employees: [
+      { id: 1, name: 'Sarah Miller', role: 'Senior Software Engineer', department: 'Engineering', manager: 'James Wilson', email: 'sarah.miller@karajo.com', phone: '+1 (555) 123-4567', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop', joinDate: 'Mar 15, 2022', status: 'active', location: 'New York', employmentType: 'Full-time', rating: 4.5, kpiScore: 94, pendingReviews: 2 },
+      { id: 2, name: 'James Wilson', role: 'Engineering Manager', department: 'Engineering', manager: 'CTO', email: 'james.wilson@karajo.com', phone: '+1 (555) 234-5678', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop', joinDate: 'Jan 10, 2020', status: 'active', location: 'New York', employmentType: 'Full-time', rating: 4.8, kpiScore: 97, pendingReviews: 5 },
+      { id: 3, name: 'Hanna Jenkins', role: 'Senior Project Manager', department: 'Operations', manager: 'COO', email: 'hanna.jenkins@karajo.com', phone: '+1 (555) 345-6789', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', joinDate: 'Jun 01, 2021', status: 'active', location: 'San Francisco', employmentType: 'Full-time', rating: 4.6, kpiScore: 91, pendingReviews: 3 },
+      { id: 4, name: 'Michael Chen', role: 'UX Designer', department: 'Design', manager: 'Design Lead', email: 'michael.chen@karajo.com', phone: '+1 (555) 456-7890', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop', joinDate: 'Sep 20, 2022', status: 'active', location: 'Remote', employmentType: 'Full-time', rating: 4.3, kpiScore: 88, pendingReviews: 1 },
+      { id: 5, name: 'Emma Wilson', role: 'Product Marketing', department: 'Marketing', manager: 'Marketing Director', email: 'emma.wilson@karajo.com', phone: '+1 (555) 567-8901', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop', joinDate: 'Feb 14, 2023', status: 'active', location: 'Chicago', employmentType: 'Full-time', rating: 4.7, kpiScore: 93, pendingReviews: 0 },
+    ],
+    performance: {
+      overview: { overallRating: 4.3, totalReviews: 24, completedReviews: 18, pendingReviews: 6, avgKpiScore: 89, topPerformers: 5, needsImprovement: 2 },
+      kpis: [
+        { id: 1, name: 'Code Quality', target: '95%', current: '92%', status: 'on-track', trend: 'up', category: 'Technical' },
+        { id: 2, name: 'Sprint Completion', target: '90%', current: '88%', status: 'on-track', trend: 'up', category: 'Technical' },
+        { id: 3, name: 'Bug Resolution Time', target: '< 24h', current: '18h', status: 'exceeding', trend: 'up', category: 'Technical' },
+        { id: 4, name: 'Team Collaboration', target: '4.0/5', current: '4.5/5', status: 'exceeding', trend: 'stable', category: 'Soft Skills' },
+        { id: 5, name: 'Documentation', target: '100%', current: '78%', status: 'at-risk', trend: 'down', category: 'Technical' },
+      ],
+      goals: [
+        { id: 1, title: 'Lead Frontend Architecture Redesign', progress: 72, deadline: 'Mar 31, 2026', status: 'on-track', priority: 'high', category: 'Technical' },
+        { id: 2, title: 'Mentor 2 Junior Developers', progress: 60, deadline: 'Jun 30, 2026', status: 'on-track', priority: 'medium', category: 'Leadership' },
+        { id: 3, title: 'Complete AWS Certification', progress: 45, deadline: 'Dec 31, 2026', status: 'on-track', priority: 'medium', category: 'Growth' },
+      ],
+      reviews: [
+        { id: 1, reviewer: 'James Wilson', type: 'Manager Review', date: 'Feb 28, 2026', status: 'completed', rating: 4.5, summary: 'Excellent technical skills and strong team collaboration.' },
+        { id: 2, reviewer: 'Hanna Jenkins', type: 'Peer Review', date: 'Feb 25, 2026', status: 'completed', rating: 4.3, summary: 'Great problem solver, very helpful to the team.' },
+      ],
+      feedback: [
+        { id: 1, from: 'James Wilson', to: 'Sarah Miller', type: 'positive', date: 'Feb 28, 2026', text: 'Sarah consistently delivers high-quality work.', category: 'Technical Excellence' },
+        { id: 2, from: 'Hanna Jenkins', to: 'Sarah Miller', type: 'constructive', date: 'Feb 25, 2026', text: 'Would benefit from more proactive communication.', category: 'Communication' },
+      ],
     },
     notifications: [
       { id: 1, title: 'Time to Check In', message: "Your workday has started. Don't forget to record your attendance.", time: new Date().toISOString(), type: 'reminder', read: false },
@@ -153,13 +203,17 @@ export const saveState = async () => {
   }
 };
 
-// Attendance Actions
+// ============================
+// ATTENDANCE ACTIONS
+// ============================
+
 export const checkIn = (location = 'Office - New York') => {
   const now = new Date();
   const timeStr = now.toTimeString().slice(0, 5);
   const hour = now.getHours();
+  const minute = now.getMinutes();
   let status = 'on-time';
-  if (hour >= 9 && now.getMinutes() > 15) status = 'late';
+  if (hour > 9 || (hour === 9 && minute > 15)) status = 'late';
 
   setState(prev => ({
     attendance: {
@@ -202,7 +256,20 @@ export const checkOut = () => {
   });
 };
 
-// Leave Actions
+export const submitCorrection = (data) => {
+  setState(prev => ({
+    attendance: {
+      ...prev.attendance,
+      corrections: [{ id: Date.now(), ...data, status: 'pending', submittedOn: new Date().toISOString().split('T')[0] }, ...prev.attendance.corrections],
+    },
+    notifications: [{ id: Date.now(), title: 'Correction Requested', message: `Attendance correction for ${data.date}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
+  }));
+};
+
+// ============================
+// LEAVE ACTIONS
+// ============================
+
 export const requestLeave = (data) => {
   const start = new Date(data.startDate);
   const end = new Date(data.endDate);
@@ -238,7 +305,19 @@ export const requestLeave = (data) => {
   });
 };
 
-// Permission Actions
+export const cancelLeave = (id) => {
+  setState(prev => ({
+    leave: {
+      ...prev.leave,
+      requests: prev.leave.requests.map(r => r.id === id ? { ...r, status: 'cancelled' } : r),
+    },
+  }));
+};
+
+// ============================
+// PERMISSION ACTIONS
+// ============================
+
 export const requestPermission = (data) => {
   setState(prev => {
     const duration = data.duration || 1;
@@ -264,7 +343,10 @@ export const requestPermission = (data) => {
   });
 };
 
-// Overtime Actions
+// ============================
+// OVERTIME ACTIONS
+// ============================
+
 export const requestOvertime = (data) => {
   setState(prev => {
     const newRequest = {
@@ -289,7 +371,52 @@ export const requestOvertime = (data) => {
   });
 };
 
-// Expense Actions
+// ============================
+// ACTIVITY ACTIONS
+// ============================
+
+export const addActivity = (data) => {
+  setState(prev => ({
+    activities: {
+      ...prev.activities,
+      items: [{ id: prev.activities.nextId, ...data }, ...prev.activities.items],
+      nextId: prev.activities.nextId + 1,
+    },
+  }));
+};
+
+export const updateActivity = (id, data) => {
+  setState(prev => ({
+    activities: {
+      ...prev.activities,
+      items: prev.activities.items.map(a => a.id === id ? { ...a, ...data } : a),
+    },
+  }));
+};
+
+export const deleteActivity = (id) => {
+  setState(prev => ({
+    activities: {
+      ...prev.activities,
+      items: prev.activities.items.filter(a => a.id !== id),
+    },
+  }));
+};
+
+export const submitTimesheet = (data) => {
+  setState(prev => ({
+    activities: {
+      ...prev.activities,
+      submissions: [{ id: Date.now(), ...data, status: 'pending', submittedOn: new Date().toISOString().split('T')[0] }, ...prev.activities.submissions],
+    },
+    notifications: [{ id: Date.now(), title: 'Timesheet Submitted', message: `${data.hours}h for ${data.period}`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
+  }));
+};
+
+// ============================
+// EXPENSE ACTIONS
+// ============================
+
 export const submitExpense = (data) => {
   setState(prev => ({
     expenses: {
@@ -301,7 +428,10 @@ export const submitExpense = (data) => {
   }));
 };
 
-// Penalty Actions
+// ============================
+// PENALTY ACTIONS
+// ============================
+
 export const appealPenalty = (data) => {
   setState(prev => ({
     penalties: {
@@ -312,7 +442,10 @@ export const appealPenalty = (data) => {
   }));
 };
 
-// Notification Actions
+// ============================
+// NOTIFICATION ACTIONS
+// ============================
+
 export const markNotificationRead = (id) => {
   setState(prev => ({
     notifications: prev.notifications.map(n => n.id === id ? { ...n, read: true } : n),
@@ -328,5 +461,45 @@ export const markAllNotificationsRead = () => {
 export const deleteNotification = (id) => {
   setState(prev => ({
     notifications: prev.notifications.filter(n => n.id !== id),
+  }));
+};
+
+// ============================
+// PERFORMANCE ACTIONS
+// ============================
+
+export const submitReview = (data) => {
+  setState(prev => ({
+    performance: {
+      ...prev.performance,
+      reviews: [{ id: Date.now(), ...data, status: 'completed', date: new Date().toISOString().split('T')[0] }, ...prev.performance.reviews],
+    },
+  }));
+};
+
+export const submitFeedback = (data) => {
+  setState(prev => ({
+    performance: {
+      ...prev.performance,
+      feedback: [{ id: Date.now(), ...data, date: new Date().toISOString().split('T')[0] }, ...prev.performance.feedback],
+    },
+  }));
+};
+
+export const addGoal = (data) => {
+  setState(prev => ({
+    performance: {
+      ...prev.performance,
+      goals: [{ id: Date.now(), ...data, progress: 0, status: 'on-track' }, ...prev.performance.goals],
+    },
+  }));
+};
+
+export const updateGoalProgress = (id, progress) => {
+  setState(prev => ({
+    performance: {
+      ...prev.performance,
+      goals: prev.performance.goals.map(g => g.id === id ? { ...g, progress, status: progress >= 100 ? 'completed' : progress < 30 ? 'behind' : 'on-track' } : g),
+    },
   }));
 };

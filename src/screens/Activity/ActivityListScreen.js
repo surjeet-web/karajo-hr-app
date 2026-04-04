@@ -1,23 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Card } from '../../components';
+import { Card, AnimatedListItem } from '../../components';
 import { activityData } from '../../data/mockData';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const ActivityListScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('daily');
-  const today = activityData.today;
+  const [currentDate, setCurrentDate] = useState(new Date(activityData.today.date));
+  const [refreshing, setRefreshing] = useState(false);
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getDayLabel = (date) => {
+    const today = new Date();
+    const diff = Math.floor((date - today) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { weekday: 'long' });
+  };
+
+  const goPrevDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const goNextDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setCurrentDate(newDate);
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const getCategoryColor = (category) => {
     const colorMap = {
@@ -35,24 +70,40 @@ export const ActivityListScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.dateNavigator}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={goPrevDay} activeOpacity={0.7} accessibilityLabel="Previous day">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>{today.date}</Text>
-            <Text style={styles.dayText}>Today</Text>
+            <Text style={styles.dateText}>{formatDate(currentDate)}</Text>
+            <Text style={styles.dayText}>{getDayLabel(currentDate)}</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={goNextDay} activeOpacity={0.7} accessibilityLabel="Next day">
             <Ionicons name="chevron-forward" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => {
+            hapticFeedback('light');
+            navigation.navigate('ActivityFilter');
+          }}
+          activeOpacity={0.7}
+          accessibilityLabel="Filter activities"
+        >
+          <Ionicons name="options-outline" size={22} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'daily' && styles.activeTab]}
-          onPress={() => setActiveTab('daily')}
+          onPress={() => {
+            hapticFeedback('light');
+            setActiveTab('daily');
+          }}
+          activeOpacity={0.7}
+          accessibilityLabel="Daily view"
         >
           <Text style={[styles.tabText, activeTab === 'daily' && styles.activeTabText]}>
             Daily
@@ -60,7 +111,12 @@ export const ActivityListScreen = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'weekly' && styles.activeTab]}
-          onPress={() => navigation.navigate('TimesheetWeekly')}
+          onPress={() => {
+            hapticFeedback('light');
+            navigation.navigate('TimesheetWeekly');
+          }}
+          activeOpacity={0.7}
+          accessibilityLabel="Weekly view"
         >
           <Text style={[styles.tabText, activeTab === 'weekly' && styles.activeTabText]}>
             Weekly
@@ -68,7 +124,12 @@ export const ActivityListScreen = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'monthly' && styles.activeTab]}
-          onPress={() => navigation.navigate('TimesheetMonthly')}
+          onPress={() => {
+            hapticFeedback('light');
+            navigation.navigate('TimesheetMonthly');
+          }}
+          activeOpacity={0.7}
+          accessibilityLabel="Monthly view"
         >
           <Text style={[styles.tabText, activeTab === 'monthly' && styles.activeTabText]}>
             Monthly
@@ -79,20 +140,22 @@ export const ActivityListScreen = ({ navigation }) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
       >
         {/* Today's Summary */}
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Today</Text>
-          <Text style={styles.summaryValue}>{today.total} Total</Text>
+          <Text style={styles.summaryLabel}>{getDayLabel(currentDate)}</Text>
+          <Text style={styles.summaryValue}>{activityData.today.total} Total</Text>
         </View>
 
         {/* Activity Cards */}
-        {today.activities.map((activity) => (
-          <Card
-            key={activity.id}
-            style={styles.activityCard}
-            onPress={() => navigation.navigate('ActivityDetail', { activity })}
-          >
+        {activityData.today.activities.map((activity, index) => (
+          <AnimatedListItem key={activity.id} index={index} style={styles.activityCard} onPress={() => {
+            hapticFeedback('medium');
+            navigation.navigate('ActivityDetail', { activity });
+          }}>
             <View style={styles.activityHeader}>
               <Text style={styles.activityTitle}>{activity.title}</Text>
               <Text style={styles.activityDuration}>{activity.duration}</Text>
@@ -112,14 +175,19 @@ export const ActivityListScreen = ({ navigation }) => {
               <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
               <Text style={styles.timeText}>{activity.time}</Text>
             </View>
-          </Card>
+          </AnimatedListItem>
         ))}
       </ScrollView>
 
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('AddActivity')}
+        onPress={() => {
+          hapticFeedback('medium');
+          navigation.navigate('AddActivity');
+        }}
+        activeOpacity={0.7}
+        accessibilityLabel="Add new activity"
       >
         <Ionicons name="add" size={28} color={colors.textInverse} />
       </TouchableOpacity>
@@ -135,6 +203,9 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   dateNavigator: {
     flexDirection: 'row',
@@ -152,6 +223,9 @@ const styles = StyleSheet.create({
   dayText: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+  },
+  filterButton: {
+    padding: spacing.xs,
   },
   tabsContainer: {
     flexDirection: 'row',

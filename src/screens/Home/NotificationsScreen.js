@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header } from '../../components';
+import { Header, AnimatedCard, AnimatedListItem, PulsingIcon } from '../../components';
 import { getState, subscribe, markNotificationRead, markAllNotificationsRead, deleteNotification } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn, usePressAnimation, useStaggerList } from '../../utils/animations';
 
 export const NotificationsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
+  const fadeIn = useFadeIn();
+  const slideIn = useSlideIn('up', 20, 400);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
@@ -59,28 +63,29 @@ export const NotificationsScreen = ({ navigation }) => {
     return then.toDateString() !== now.toDateString();
   });
 
-  const renderNotification = (notification) => (
-    <TouchableOpacity
-      key={notification.id}
-      style={[styles.notificationItem, !notification.read && styles.unreadItem]}
-      onPress={() => markNotificationRead(notification.id)}
-      activeOpacity={0.7}
-    >
-      <View style={[styles.notificationIcon, { backgroundColor: getIconBgColor(notification.type) }]}>
-        <Ionicons name={getIconName(notification.type)} size={20} color={getIconColor(notification.type)} />
-      </View>
-      <View style={styles.notificationContent}>
-        <Text style={[styles.notificationTitle, !notification.read && styles.unreadTitle]}>{notification.title}</Text>
-        <Text style={styles.notificationMessage} numberOfLines={2}>{notification.message}</Text>
-      </View>
-      <View style={styles.notificationRight}>
-        <TouchableOpacity onPress={() => deleteNotification(notification.id)} style={styles.deleteButton}>
-          <Ionicons name="close" size={16} color={colors.textTertiary} />
-        </TouchableOpacity>
-        <Text style={styles.notificationTime}>{timeAgo(notification.time)}</Text>
-        {!notification.read && <View style={styles.unreadDot} />}
-      </View>
-    </TouchableOpacity>
+  const renderNotification = (notification, index) => (
+    <AnimatedListItem key={notification.id} index={index} style={styles.notificationWrapper}>
+      <TouchableOpacity
+        style={[styles.notificationItem, !notification.read && styles.unreadItem]}
+        onPress={() => { hapticFeedback('light'); markNotificationRead(notification.id); }}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.notificationIcon, { backgroundColor: getIconBgColor(notification.type) }]}>
+          <Ionicons name={getIconName(notification.type)} size={20} color={getIconColor(notification.type)} />
+        </View>
+        <View style={styles.notificationContent}>
+          <Text style={[styles.notificationTitle, !notification.read && styles.unreadTitle]}>{notification.title}</Text>
+          <Text style={styles.notificationMessage} numberOfLines={2}>{notification.message}</Text>
+        </View>
+        <View style={styles.notificationRight}>
+          <TouchableOpacity onPress={() => { hapticFeedback('medium'); deleteNotification(notification.id); }} style={styles.deleteButton} activeOpacity={0.7}>
+            <Ionicons name="close" size={16} color={colors.textTertiary} />
+          </TouchableOpacity>
+          <Text style={styles.notificationTime}>{timeAgo(notification.time)}</Text>
+          {!notification.read && <View style={styles.unreadDot} />}
+        </View>
+      </TouchableOpacity>
+    </AnimatedListItem>
   );
 
   return (
@@ -90,7 +95,7 @@ export const NotificationsScreen = ({ navigation }) => {
         onBack={() => navigation.goBack()}
         rightComponent={
           unreadCount > 0 ? (
-            <TouchableOpacity onPress={markAllNotificationsRead}>
+            <TouchableOpacity onPress={() => { hapticFeedback('light'); markAllNotificationsRead(); }} activeOpacity={0.7}>
               <Text style={styles.markAllText}>Mark all read</Text>
             </TouchableOpacity>
           ) : null
@@ -101,14 +106,14 @@ export const NotificationsScreen = ({ navigation }) => {
         {today.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>TODAY ({today.length})</Text>
-            {today.map(renderNotification)}
+            {today.map((n, i) => renderNotification(n, i))}
           </View>
         )}
 
         {older.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>OLDER ({older.length})</Text>
-            {older.map(renderNotification)}
+            {older.map((n, i) => renderNotification(n, i + today.length))}
           </View>
         )}
 
@@ -130,7 +135,8 @@ const styles = StyleSheet.create({
   scrollContent: { padding: spacing.lg },
   section: { marginBottom: spacing.xl },
   sectionTitle: { ...typography.label, color: colors.textTertiary, marginBottom: spacing.md },
-  notificationItem: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.sm },
+  notificationWrapper: { marginBottom: spacing.sm },
+  notificationItem: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: 0 },
   unreadItem: { borderWidth: 1, borderColor: colors.primary },
   notificationIcon: { width: 44, height: 44, borderRadius: borderRadius.md, justifyContent: 'center', alignItems: 'center', marginRight: spacing.md },
   notificationContent: { flex: 1 },

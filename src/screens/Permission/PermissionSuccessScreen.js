@@ -1,14 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 
-export const PermissionSuccessScreen = ({ navigation }) => {
+export const PermissionSuccessScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const data = route.params;
+
+  const requestId = data?.id ? `#KRJ-${data.id}` : `#KRJ-${Math.floor(Math.random() * 9000 + 1000)}`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -16,51 +20,78 @@ export const PermissionSuccessScreen = ({ navigation }) => {
         <View style={styles.successIcon}>
           <Ionicons name="checkmark" size={40} color={colors.textInverse} />
         </View>
-        
+
         <Text style={styles.title}>Permission Request Submitted</Text>
         <Text style={styles.subtitle}>Your manager has been notified.</Text>
-        <Text style={styles.requestId}>Request ID: #KRJ-2023-889</Text>
+        <Text style={styles.requestId}>Request ID: {requestId}</Text>
 
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryItem}>
-            <View style={styles.summaryIcon}>
-              <Ionicons name="calendar" size={20} color={colors.primary} />
+        {data && (
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIcon}>
+                <Ionicons name="calendar" size={20} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.summaryLabel}>Date</Text>
+                <Text style={styles.summaryValue}>{data.date}</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.summaryLabel}>Date</Text>
-              <Text style={styles.summaryValue}>Fri 20, Feb</Text>
+
+            <View style={styles.divider} />
+
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIcon}>
+                <Ionicons name="time" size={20} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.summaryLabel}>Time</Text>
+                <Text style={styles.summaryValue}>{data.startTime} - {data.endTime}</Text>
+              </View>
             </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIcon}>
+                <Ionicons name="timer" size={20} color={colors.primary} />
+              </View>
+              <View>
+                <Text style={styles.summaryLabel}>Total Duration</Text>
+                <Text style={styles.summaryValue}>{data.duration}h</Text>
+              </View>
+            </View>
+
+            {data.reason && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.summaryItem}>
+                  <View style={styles.summaryIcon}>
+                    <Ionicons name="document-text" size={20} color={colors.primary} />
+                  </View>
+                  <View style={styles.summaryInfo}>
+                    <Text style={styles.summaryLabel}>Reason</Text>
+                    <Text style={styles.summaryValue}>{data.reason}</Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryItem}>
-            <View style={styles.summaryIcon}>
-              <Ionicons name="time" size={20} color={colors.primary} />
-            </View>
-            <View>
-              <Text style={styles.summaryLabel}>Time</Text>
-              <Text style={styles.summaryValue}>09:00 AM - 10:30 AM</Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryItem}>
-            <View style={styles.summaryIcon}>
-              <Ionicons name="timer" size={20} color={colors.primary} />
-            </View>
-            <View>
-              <Text style={styles.summaryLabel}>Total Duration</Text>
-              <Text style={styles.summaryValue}>3 Days</Text>
-            </View>
-          </View>
-        </View>
+        )}
       </View>
 
       <View style={styles.footer}>
-        <Button title="Back to permission" onPress={() => navigation.navigate('PermissionHome')} />
-        <Button title="Go to approval" variant="outline" onPress={() => navigation.navigate('PermissionHome')} style={styles.secondaryButton} />
+        <Button
+          title="Back to Permission"
+          onPress={() => { hapticFeedback('medium'); navigation.navigate('PermissionHome'); }}
+          accessibilityLabel="Back to permission home"
+        />
+        <Button
+          title="View All Requests"
+          variant="outline"
+          onPress={() => { hapticFeedback('medium'); navigation.navigate('PermissionHome'); }}
+          style={styles.secondaryButton}
+          accessibilityLabel="View all permission requests"
+        />
       </View>
     </View>
   );
@@ -78,6 +109,7 @@ const styles = StyleSheet.create({
   summaryIcon: { width: 44, height: 44, borderRadius: borderRadius.md, backgroundColor: colors.primaryLighter, justifyContent: 'center', alignItems: 'center' },
   summaryLabel: { ...typography.caption, color: colors.textTertiary },
   summaryValue: { ...typography.body, color: colors.text, fontWeight: '600', marginTop: spacing.xs },
+  summaryInfo: { flex: 1 },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
   footer: { padding: spacing.lg, gap: spacing.md },
   secondaryButton: { borderWidth: 1.5, borderColor: colors.primary },

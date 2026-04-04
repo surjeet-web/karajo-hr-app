@@ -7,10 +7,12 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button } from '../../components';
 import { penaltyData } from '../../data/mockData';
+import { appealPenalty } from '../../store';
+import { hapticFeedback } from '../../animations/hooks';
 
 export const PenaltyReviewScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { penalty, appealType, explanation } = route.params || {};
+  const { penalty, appealType, explanation, supportingDoc } = route.params || {};
 
   const getAppealTypeLabel = (id) => {
     const type = penaltyData.appealTypes.find(t => t.id === id);
@@ -23,6 +25,18 @@ export const PenaltyReviewScreen = ({ navigation, route }) => {
     { icon: 'help-circle', label: 'Appeal Reason', value: getAppealTypeLabel(appealType) },
     { icon: 'calendar-outline', label: 'Appeal Deadline', value: penalty?.appealDeadline || 'N/A' },
   ];
+
+  const handleSubmit = () => {
+    hapticFeedback('medium');
+    appealPenalty({
+      penaltyId: penalty?.id,
+      penaltyType: penalty?.type,
+      type: getAppealTypeLabel(appealType),
+      explanation,
+      supportingDoc,
+    });
+    navigation.navigate('PenaltySuccess');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -63,7 +77,7 @@ export const PenaltyReviewScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Confirm & Submit" onPress={() => navigation.navigate('PenaltySuccess')} />
+        <Button title="Confirm & Submit" onPress={handleSubmit} />
       </View>
     </View>
   );

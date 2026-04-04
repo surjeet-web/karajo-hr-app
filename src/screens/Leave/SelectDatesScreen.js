@@ -5,7 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Button, ProgressBar } from '../../components';
+import { Header, Button, ProgressBar, AnimatedCard } from '../../components';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const SelectDatesScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
@@ -13,6 +15,8 @@ export const SelectDatesScreen = ({ navigation, route }) => {
   const today = new Date();
   const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  const fadeIn = useFadeIn(400);
+  const slideUp = useSlideIn('up', 20, 500, 100);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -22,11 +26,20 @@ export const SelectDatesScreen = ({ navigation, route }) => {
   const getDaysCount = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    return diff > 0 ? diff : 1;
+    let count = 0;
+    const current = new Date(start);
+    while (current <= end) {
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return count > 0 ? count : 1;
   };
 
   const incrementDate = (type, delta) => {
+    hapticFeedback('light');
     const current = type === 'start' ? new Date(startDate) : new Date(endDate);
     current.setDate(current.getDate() + delta);
     const newDate = current.toISOString().split('T')[0];
@@ -51,13 +64,13 @@ export const SelectDatesScreen = ({ navigation, route }) => {
         <View style={styles.dateCard}>
           <Text style={styles.dateLabel}>Start Date</Text>
           <View style={styles.datePicker}>
-            <TouchableOpacity onPress={() => incrementDate('start', -1)} style={styles.dateButton}>
+            <TouchableOpacity onPress={() => incrementDate('start', -1)} style={styles.dateButton} activeOpacity={0.7} accessible accessibilityLabel="Decrease start date" accessibilityRole="button">
               <Ionicons name="chevron-back" size={20} color={colors.primary} />
             </TouchableOpacity>
             <View style={styles.dateDisplay}>
               <Text style={styles.dateText}>{formatDate(startDate)}</Text>
             </View>
-            <TouchableOpacity onPress={() => incrementDate('start', 1)} style={styles.dateButton}>
+            <TouchableOpacity onPress={() => incrementDate('start', 1)} style={styles.dateButton} activeOpacity={0.7} accessible accessibilityLabel="Increase start date" accessibilityRole="button">
               <Ionicons name="chevron-forward" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
@@ -66,13 +79,13 @@ export const SelectDatesScreen = ({ navigation, route }) => {
         <View style={styles.dateCard}>
           <Text style={styles.dateLabel}>End Date</Text>
           <View style={styles.datePicker}>
-            <TouchableOpacity onPress={() => incrementDate('end', -1)} style={styles.dateButton}>
+            <TouchableOpacity onPress={() => incrementDate('end', -1)} style={styles.dateButton} activeOpacity={0.7} accessible accessibilityLabel="Decrease end date" accessibilityRole="button">
               <Ionicons name="chevron-back" size={20} color={colors.primary} />
             </TouchableOpacity>
             <View style={styles.dateDisplay}>
               <Text style={styles.dateText}>{formatDate(endDate)}</Text>
             </View>
-            <TouchableOpacity onPress={() => incrementDate('end', 1)} style={styles.dateButton}>
+            <TouchableOpacity onPress={() => incrementDate('end', 1)} style={styles.dateButton} activeOpacity={0.7} accessible accessibilityLabel="Increase end date" accessibilityRole="button">
               <Ionicons name="chevron-forward" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
@@ -98,7 +111,7 @@ export const SelectDatesScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Continue" onPress={() => navigation.navigate('UploadDocument', { leaveType, startDate, endDate, days: getDaysCount() })} />
+        <Button title="Continue" onPress={() => { hapticFeedback('heavy'); navigation.navigate('UploadDocument', { leaveType, startDate, endDate, days: getDaysCount() }); }} />
       </View>
     </View>
   );

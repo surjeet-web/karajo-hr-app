@@ -1,22 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button, ProgressBar } from '../../components';
+import { Header, Card, Badge, Button, ProgressBar, AnimatedListItem } from '../../components';
 import { performanceData } from '../../data/mockData';
-import { useFadeIn, useSlideIn, useScaleIn, hapticFeedback } from '../../animations/hooks';
-import { AnimatedProgressBar, PulsingIcon } from '../../animations/AnimatedComponents';
+import { useFadeIn, useSlideIn, useScaleIn } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const PerformanceDashboardScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const overview = performanceData.overview;
+  const [refreshing, setRefreshing] = useState(false);
   const headerFade = useFadeIn(300);
   const statsSlide = useSlideIn('up', 400, 100);
   const actionsSlide = useSlideIn('up', 400, 500);
   const reviewsSlide = useSlideIn('up', 400, 700);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
+
+  const quickActions = [
+    { icon: 'create-outline', label: 'Write Review', color: colors.primary, screen: 'PerformanceReview' },
+    { icon: 'speedometer', label: 'View KPIs', color: colors.accentPink, screen: 'KPITracking' },
+    { icon: 'flag', label: 'Set Goals', color: colors.success, screen: 'GoalSetting' },
+    { icon: 'chatbubble-ellipses', label: '360 Feedback', color: colors.accentPurple, screen: 'Feedback360' },
+  ];
+
+  const recentReviews = performanceData.reviews.filter(r => r.status === 'completed').slice(0, 3);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -24,7 +40,12 @@ export const PerformanceDashboardScreen = ({ navigation }) => {
         <Header title="Performance" onBack={() => navigation.goBack()} />
       </Animated.View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         <Animated.View style={[{ opacity: statsSlide.opacity, transform: [{ translateY: statsSlide.offset }] }]}>
           {[
             [
@@ -60,12 +81,7 @@ export const PerformanceDashboardScreen = ({ navigation }) => {
         <Animated.View style={[{ opacity: actionsSlide.opacity, transform: [{ translateY: actionsSlide.offset }] }]}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionGrid}>
-            {[
-              { icon: 'speedometer', label: 'Track KPIs', color: colors.primary, screen: 'KPITracking' },
-              { icon: 'flag', label: 'Set Goals', color: colors.accentPink, screen: 'GoalSetting' },
-              { icon: 'clipboard', label: 'Reviews', color: colors.success, screen: 'PerformanceReview' },
-              { icon: 'chatbubble-ellipses', label: '360 Feedback', color: colors.accentPurple, screen: 'Feedback360' },
-            ].map((action, i) => {
+            {quickActions.map((action, i) => {
               const slideIn = useSlideIn('up', 300, 600 + i * 100);
               return (
                 <Animated.View key={action.label} style={[{ width: '47%', opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }] }]}>
@@ -73,6 +89,8 @@ export const PerformanceDashboardScreen = ({ navigation }) => {
                     style={styles.actionCard}
                     activeOpacity={0.7}
                     onPress={() => { hapticFeedback('medium'); navigation.navigate(action.screen); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${action.label} - Navigate to ${action.screen}`}
                   >
                     <View style={[styles.actionIcon, { backgroundColor: `${action.color}15` }]}>
                       <Ionicons name={action.icon} size={24} color={action.color} />
@@ -87,23 +105,28 @@ export const PerformanceDashboardScreen = ({ navigation }) => {
 
         <Animated.View style={[{ opacity: reviewsSlide.opacity, transform: [{ translateY: reviewsSlide.offset }] }]}>
           <Text style={styles.sectionTitle}>Recent Reviews</Text>
-          {performanceData.reviews.filter(r => r.status === 'completed').slice(0, 3).map((review, i) => {
+          {recentReviews.map((review, i) => {
             const slideIn = useSlideIn('up', 350, 800 + i * 100);
             return (
               <Animated.View key={review.id} style={[{ opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }] }]}>
-                <Card style={styles.reviewCard} padding="md">
-                  <View style={styles.reviewHeader}>
-                    <View>
-                      <Text style={styles.reviewerName}>{review.reviewer}</Text>
-                      <Text style={styles.reviewType}>{review.type}</Text>
-                    </View>
-                    <View style={styles.reviewRating}>
-                      <Ionicons name="star" size={16} color={colors.warning} />
-                      <Text style={styles.reviewRatingValue}>{review.rating}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.reviewSummary}>{review.summary}</Text>
-                </Card>
+                <AnimatedListItem index={i} haptic="medium" style={{ marginBottom: spacing.md }}>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticFeedback('medium'); navigation.navigate('PerformanceReview'); }}>
+                    <Card style={styles.reviewCard} padding="md">
+                      <View style={styles.reviewHeader}>
+                        <View>
+                          <Text style={styles.reviewerName}>{review.reviewer}</Text>
+                          <Text style={styles.reviewType}>{review.type}</Text>
+                        </View>
+                        <View style={styles.reviewRating}>
+                          <Ionicons name="star" size={16} color={colors.warning} />
+                          <Text style={styles.reviewRatingValue}>{review.rating}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.reviewSummary}>{review.summary}</Text>
+                      <Text style={styles.reviewDate}>{review.date}</Text>
+                    </Card>
+                  </TouchableOpacity>
+                </AnimatedListItem>
               </Animated.View>
             );
           })}
@@ -133,4 +156,5 @@ const styles = StyleSheet.create({
   reviewRating: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   reviewRatingValue: { ...typography.h5, color: colors.warning, fontWeight: '700' },
   reviewSummary: { ...typography.bodySmall, color: colors.textSecondary, lineHeight: 20 },
+  reviewDate: { ...typography.caption, color: colors.textTertiary, marginTop: spacing.xs },
 });

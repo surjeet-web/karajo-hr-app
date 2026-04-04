@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -13,10 +13,16 @@ export const PenaltyHomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const summary = penaltyData.summary;
   const [activeTab, setActiveTab] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
   const headerFade = useFadeIn(300);
   const tabsSlide = useSlideIn('down', 300, 100);
   const statsSlide = useSlideIn('up', 400, 200);
   const listSlide = useSlideIn('up', 400, 500);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -63,13 +69,16 @@ export const PenaltyHomeScreen = ({ navigation }) => {
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => { hapticFeedback('light'); setActiveTab(tab); }}
             activeOpacity={0.7}
+            accessibilityLabel={`Show ${tab} penalties`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab }}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
         ))}
       </Animated.View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
         <Animated.View style={[{ opacity: statsSlide.opacity, transform: [{ translateY: statsSlide.offset }] }]}>
           <View style={styles.summaryGrid}>
             {[
@@ -145,7 +154,7 @@ export const PenaltyHomeScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="File Appeal" icon={<Ionicons name="document-text" size={20} color={colors.textInverse} />} onPress={() => { hapticFeedback('medium'); navigation.navigate('PenaltyAppeal'); }} />
+        <Button title="File Appeal" icon={<Ionicons name="document-text" size={20} color={colors.textInverse} />} onPress={() => { hapticFeedback('medium'); navigation.navigate('PenaltyAppeal'); }} accessibilityLabel="File a penalty appeal" />
       </View>
     </View>
   );

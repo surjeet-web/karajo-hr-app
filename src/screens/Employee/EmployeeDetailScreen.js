@@ -1,19 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Avatar, Button, ProgressBar, StatusTimeline } from '../../components';
+import { Header, Card, Badge, Avatar, Button, ProgressBar, StatusTimeline, AnimatedListItem } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const EmployeeDetailScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { employee } = route.params;
+  const fadeIn = useFadeIn();
+  const slideIn = useSlideIn('up', 30, 400);
 
   const infoRows = [
-    { icon: 'mail-outline', label: 'Email', value: employee.email, action: () => Linking.openURL(`mailto:${employee.email}`) },
-    { icon: 'call-outline', label: 'Phone', value: employee.phone, action: () => Linking.openURL(`tel:${employee.phone}`) },
+    { icon: 'mail-outline', label: 'Email', value: employee.email, action: () => { hapticFeedback('medium'); Linking.openURL(`mailto:${employee.email}`); } },
+    { icon: 'call-outline', label: 'Phone', value: employee.phone, action: () => { hapticFeedback('medium'); Linking.openURL(`tel:${employee.phone}`); } },
     { icon: 'business-outline', label: 'Department', value: employee.department },
     { icon: 'person-outline', label: 'Reports To', value: employee.manager },
     { icon: 'calendar-outline', label: 'Joined', value: employee.joinDate },
@@ -29,9 +33,12 @@ export const EmployeeDetailScreen = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Header title="Employee Profile" onBack={() => navigation.goBack()} />
+      <Animated.View style={{ opacity: fadeIn }}>
+        <Header title="Employee Profile" onBack={() => navigation.goBack()} />
+      </Animated.View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Animated.View style={{ opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }] }}>
         <Card padding="lg" style={styles.profileCard}>
           <View style={styles.profileHeader}>
             <Avatar name={employee.name} size="xlarge" />
@@ -62,18 +69,28 @@ export const EmployeeDetailScreen = ({ navigation, route }) => {
             </View>
           )}
         </Card>
+        </Animated.View>
 
         <Card padding="lg" style={styles.card}>
           <Text style={styles.sectionTitle}>Contact & Information</Text>
           {infoRows.map((row, i) => (
-            <TouchableOpacity key={i} style={styles.infoRow} onPress={row.action} disabled={!row.action}>
-              <Ionicons name={row.icon} size={18} color={colors.textTertiary} />
-              <View style={styles.infoText}>
-                <Text style={styles.infoLabel}>{row.label}</Text>
-                <Text style={styles.infoValue}>{row.value}</Text>
-              </View>
-              {row.action && <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />}
-            </TouchableOpacity>
+            <AnimatedListItem key={i} index={i} haptic={row.action ? 'medium' : null}>
+              <TouchableOpacity
+                style={styles.infoRow}
+                onPress={row.action}
+                disabled={!row.action}
+                activeOpacity={0.7}
+                accessibilityLabel={`${row.label}: ${row.value}`}
+                accessibilityRole={row.action ? 'link' : 'text'}
+              >
+                <Ionicons name={row.icon} size={18} color={colors.textTertiary} />
+                <View style={styles.infoText}>
+                  <Text style={styles.infoLabel}>{row.label}</Text>
+                  <Text style={styles.infoValue}>{row.value}</Text>
+                </View>
+                {row.action && <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />}
+              </TouchableOpacity>
+            </AnimatedListItem>
           ))}
         </Card>
 
@@ -84,7 +101,7 @@ export const EmployeeDetailScreen = ({ navigation, route }) => {
 
         {employee.pendingReviews > 0 && (
           <View style={styles.footer}>
-            <Button title={`View ${employee.pendingReviews} Pending Reviews`} onPress={() => navigation.navigate('PerformanceDashboard')} />
+            <Button title={`View ${employee.pendingReviews} Pending Reviews`} onPress={() => { hapticFeedback('medium'); navigation.navigate('PerformanceDashboard'); }} />
           </View>
         )}
       </ScrollView>

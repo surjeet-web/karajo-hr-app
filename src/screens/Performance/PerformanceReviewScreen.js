@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button, StatusTimeline } from '../../components';
+import { Header, Card, Badge, Button, StatusTimeline, AnimatedListItem } from '../../components';
 import { performanceData } from '../../data/mockData';
+import { submitReview } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const PerformanceReviewScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -14,9 +17,51 @@ export const PerformanceReviewScreen = ({ navigation }) => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(0);
+  const [strengths, setStrengths] = useState('');
+  const [improvements, setImprovements] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
 
   const tabs = ['all', 'completed', 'pending'];
   const filteredReviews = activeTab === 'all' ? performanceData.reviews : performanceData.reviews.filter(r => r.status === activeTab);
+
+  const handleStarPress = (star) => {
+    hapticFeedback('light');
+    setRating(star);
+  };
+
+  const handleSubmitReview = () => {
+    if (rating === 0) {
+      Alert.alert('Missing Rating', 'Please select a rating before submitting.');
+      return;
+    }
+    if (!reviewText.trim()) {
+      Alert.alert('Missing Comments', 'Please write your review comments before submitting.');
+      return;
+    }
+
+    submitReview({
+      reviewer: selectedReview?.reviewer || 'Self Review',
+      type: selectedReview?.type || 'Self Review',
+      rating,
+      summary: reviewText,
+      strengths: strengths.trim(),
+      improvements: improvements.trim(),
+    });
+
+    setRating(0);
+    setReviewText('');
+    setStrengths('');
+    setImprovements('');
+    setSelectedReview(null);
+    Alert.alert('Review Submitted', 'Your performance review has been submitted successfully.');
+    navigation.navigate('PerformanceDashboard');
+  };
 
   if (selectedReview) {
     return (
@@ -34,11 +79,20 @@ export const PerformanceReviewScreen = ({ navigation }) => {
             <Text style={styles.label}>Rating</Text>
             <View style={styles.ratingRow}>
               {[1, 2, 3, 4, 5].map(star => (
-                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => handleStarPress(star)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                  accessibilityState={{ selected: star <= rating }}
+                >
                   <Ionicons name={star <= rating ? 'star' : 'star-outline'} size={32} color={star <= rating ? colors.warning : colors.border} />
                 </TouchableOpacity>
               ))}
             </View>
+            {rating > 0 && (
+              <Text style={styles.ratingLabel}>{rating} of 5 stars</Text>
+            )}
           </View>
 
           <View style={styles.field}>
@@ -53,6 +107,7 @@ export const PerformanceReviewScreen = ({ navigation }) => {
                 value={reviewText}
                 onChangeText={setReviewText}
                 maxLength={1000}
+                accessibilityLabel="Review comments text area"
               />
               <Text style={styles.charCount}>{reviewText.length}/1000</Text>
             </View>
@@ -67,7 +122,10 @@ export const PerformanceReviewScreen = ({ navigation }) => {
                 placeholderTextColor={colors.textTertiary}
                 multiline
                 numberOfLines={3}
+                value={strengths}
+                onChangeText={setStrengths}
                 maxLength={500}
+                accessibilityLabel="Strengths text area"
               />
             </View>
           </View>
@@ -81,14 +139,17 @@ export const PerformanceReviewScreen = ({ navigation }) => {
                 placeholderTextColor={colors.textTertiary}
                 multiline
                 numberOfLines={3}
+                value={improvements}
+                onChangeText={setImprovements}
                 maxLength={500}
+                accessibilityLabel="Areas for improvement text area"
               />
             </View>
           </View>
         </ScrollView>
 
         <View style={styles.footer}>
-          <Button title="Submit Review" onPress={() => { setSelectedReview(null); navigation.navigate('PerformanceDashboard'); }} />
+          <Button title="Submit Review" onPress={handleSubmitReview} />
         </View>
       </View>
     );
@@ -100,13 +161,25 @@ export const PerformanceReviewScreen = ({ navigation }) => {
 
       <View style={styles.tabsContainer}>
         {tabs.map(tab => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.activeTab]} onPress={() => setActiveTab(tab)}>
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => { hapticFeedback('light'); setActiveTab(tab); }}
+            accessibilityRole="button"
+            accessibilityLabel={`Show ${tab} reviews`}
+            accessibilityState={{ selected: activeTab === tab }}
+          >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         {filteredReviews.map(review => (
           <Card key={review.id} style={styles.reviewCard} padding="md">
             <View style={styles.reviewHeader}>
@@ -127,11 +200,17 @@ export const PerformanceReviewScreen = ({ navigation }) => {
             <Text style={styles.reviewDate}>{review.date}</Text>
             {review.status === 'pending' && (
               <View style={styles.reviewActions}>
-                <Button title="Write Review" size="small" onPress={() => setSelectedReview(review)} />
+                <Button title="Write Review" size="small" onPress={() => { hapticFeedback('medium'); setSelectedReview(review); }} />
               </View>
             )}
           </Card>
         ))}
+        {filteredReviews.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={48} color={colors.textTertiary} />
+            <Text style={styles.emptyText}>No {activeTab === 'all' ? '' : activeTab} reviews found</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -160,8 +239,11 @@ const styles = StyleSheet.create({
   field: { marginBottom: spacing.lg },
   label: { ...typography.label, color: colors.text, marginBottom: spacing.sm },
   ratingRow: { flexDirection: 'row', gap: spacing.sm },
+  ratingLabel: { ...typography.bodySmall, color: colors.warning, fontWeight: '600', marginTop: spacing.xs },
   textAreaContainer: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.lg, padding: spacing.md },
   textArea: { ...typography.body, color: colors.text, minHeight: 100, textAlignVertical: 'top' },
   charCount: { ...typography.caption, color: colors.textTertiary, textAlign: 'right', marginTop: spacing.xs },
   footer: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  emptyState: { alignItems: 'center', paddingVertical: spacing.xl },
+  emptyText: { ...typography.body, color: colors.textTertiary, marginTop: spacing.sm },
 });

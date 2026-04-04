@@ -1,30 +1,79 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Button } from '../../components';
+import { Header, Card, Button, AnimatedListItem } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 import { attendanceData } from '../../data/mockData';
+import { attendanceService } from '../../services';
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 export const MonthlySummaryScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const summary = attendanceData.monthlySummary;
+  const [currentMonth, setCurrentMonth] = useState(1); // February (0-indexed)
+  const [currentYear, setCurrentYear] = useState(2026);
+
+  const goPrevMonth = () => {
+    hapticFeedback('light');
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(y => y - 1);
+    } else {
+      setCurrentMonth(m => m - 1);
+    }
+  };
+
+  const goNextMonth = () => {
+    hapticFeedback('light');
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(y => y + 1);
+    } else {
+      setCurrentMonth(m => m + 1);
+    }
+  };
+
+  const handleDownload = () => {
+    hapticFeedback('medium');
+    Alert.alert('Export Report', `Downloading ${MONTHS[currentMonth]} ${currentYear} attendance report...`, [{ text: 'OK' }]);
+  };
+
+  const handleSummaryItemPress = (title) => {
+    hapticFeedback('medium');
+    navigation.navigate('AttendanceDetail', { summaryTitle: title });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Header title="Monthly Summary" onBack={() => navigation.goBack()} rightComponent={<Ionicons name="download-outline" size={24} color={colors.primary} />} />
+      <Header
+        title="Monthly Summary"
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <TouchableOpacity onPress={handleDownload} activeOpacity={0.7} accessibilityLabel="Download monthly report">
+            <Ionicons name="download-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        }
+      />
 
       <View style={styles.monthNavigator}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={goPrevMonth} activeOpacity={0.7} accessibilityLabel="Previous month">
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.monthContainer}>
-          <Text style={styles.monthText}>February 2026</Text>
-          <Text style={styles.weekText}>Current Period</Text>
+          <Text style={styles.monthText}>{MONTHS[currentMonth]} {currentYear}</Text>
+          <Text style={styles.weekText}>
+            {currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear() ? 'Current Period' : 'Viewing Period'}
+          </Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={goNextMonth} activeOpacity={0.7} accessibilityLabel="Next month">
           <Ionicons name="chevron-forward" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -99,26 +148,33 @@ export const MonthlySummaryScreen = ({ navigation }) => {
             { icon: 'umbrella', color: colors.warning, title: 'Leave Taken', subtitle: 'Annual & Sick leave', value: `${summary.leaveTaken} Day`, status: summary.leaveType, statusColor: colors.textSecondary },
             { icon: 'alert-circle', color: colors.error, title: 'Late Arrivals', subtitle: 'Clock-in past 9:00 AM', value: `${summary.lateArrivals} Days`, status: summary.lateMinutes, statusColor: colors.error },
           ].map((item, index) => (
-            <TouchableOpacity key={index} style={styles.summaryItem}>
-              <View style={[styles.summaryIcon, { backgroundColor: `${item.color}15` }]}>
-                <Ionicons name={item.icon} size={20} color={item.color} />
+            <AnimatedListItem key={index} index={index} onPress={() => handleSummaryItemPress(item.title)} accessibilityLabel={`${item.title}: ${item.value}`}>
+              <View style={styles.summaryItem}>
+                <View style={[styles.summaryIcon, { backgroundColor: `${item.color}15` }]}>
+                  <Ionicons name={item.icon} size={20} color={item.color} />
+                </View>
+                <View style={styles.summaryInfo}>
+                  <Text style={styles.summaryTitle}>{item.title}</Text>
+                  <Text style={styles.summarySubtitle}>{item.subtitle}</Text>
+                </View>
+                <View style={styles.summaryRight}>
+                  <Text style={styles.summaryValue}>{item.value}</Text>
+                  <Text style={[styles.summaryStatus, { color: item.statusColor }]}>{item.status}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
               </View>
-              <View style={styles.summaryInfo}>
-                <Text style={styles.summaryTitle}>{item.title}</Text>
-                <Text style={styles.summarySubtitle}>{item.subtitle}</Text>
-              </View>
-              <View style={styles.summaryRight}>
-                <Text style={styles.summaryValue}>{item.value}</Text>
-                <Text style={[styles.summaryStatus, { color: item.statusColor }]}>{item.status}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-            </TouchableOpacity>
+            </AnimatedListItem>
           ))}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Download Full Reports" icon={<Ionicons name="download" size={18} color={colors.textInverse} />} />
+        <Button
+          title="Download Full Reports"
+          icon={<Ionicons name="download" size={18} color={colors.textInverse} />}
+          onPress={handleDownload}
+          accessibilityLabel="Download full attendance report"
+        />
       </View>
     </View>
   );

@@ -1,14 +1,56 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Button } from '../../components';
+import { Header, Badge, Button } from '../../components';
+import { requestPermission } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
 
-export const PermissionReviewScreen = ({ navigation }) => {
+export const PermissionReviewScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const request = route.params?.request;
+
+  if (!request) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <Header title="Review Permission" onBack={() => navigation.goBack()} />
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+          <Text style={styles.errorText}>No permission request data found.</Text>
+          <Button title="Go Back" onPress={() => navigation.goBack()} variant="outline" />
+        </View>
+      </View>
+    );
+  }
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'approved': return 'success';
+      case 'pending': return 'warning';
+      case 'rejected': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const handleConfirm = () => {
+    requestPermission({
+      date: request.date,
+      startTime: request.startTime,
+      endTime: request.endTime,
+      duration: request.duration,
+      reason: request.reason,
+    });
+    navigation.navigate('PermissionSuccess', {
+      date: request.date,
+      startTime: request.startTime,
+      endTime: request.endTime,
+      duration: request.duration,
+      reason: request.reason,
+    });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -25,7 +67,7 @@ export const PermissionReviewScreen = ({ navigation }) => {
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Date</Text>
-              <Text style={styles.summaryValue}>Fri 20, Feb</Text>
+              <Text style={styles.summaryValue}>{request.date}</Text>
             </View>
           </View>
 
@@ -37,7 +79,7 @@ export const PermissionReviewScreen = ({ navigation }) => {
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Time Window</Text>
-              <Text style={styles.summaryValue}>09:00 AM - 10:30 AM</Text>
+              <Text style={styles.summaryValue}>{request.startTime} - {request.endTime}</Text>
             </View>
           </View>
 
@@ -49,7 +91,7 @@ export const PermissionReviewScreen = ({ navigation }) => {
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Total Duration</Text>
-              <Text style={styles.summaryValue}>1h 30m</Text>
+              <Text style={styles.summaryValue}>{request.duration}h</Text>
             </View>
           </View>
 
@@ -61,9 +103,24 @@ export const PermissionReviewScreen = ({ navigation }) => {
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Reason</Text>
-              <Text style={styles.summaryValue}>Personal appointment</Text>
+              <Text style={styles.summaryValue}>{request.reason}</Text>
             </View>
           </View>
+
+          {request.status && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.summaryItem}>
+                <View style={styles.summaryIcon}>
+                  <Ionicons name="information-circle" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.summaryInfo}>
+                  <Text style={styles.summaryLabel}>Status</Text>
+                  <Badge text={request.status.charAt(0).toUpperCase() + request.status.slice(1)} variant={getStatusVariant(request.status)} size="small" />
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.infoBox}>
@@ -75,7 +132,11 @@ export const PermissionReviewScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Submit Permission Request" onPress={() => navigation.navigate('PermissionSuccess')} />
+        <Button
+          title="Submit Permission Request"
+          onPress={handleConfirm}
+          accessibilityLabel="Submit permission request"
+        />
       </View>
     </View>
   );
@@ -84,6 +145,8 @@ export const PermissionReviewScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { padding: spacing.lg },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
+  errorText: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
   heading: { ...typography.h4, color: colors.text, marginBottom: spacing.sm },
   subheading: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.lg },
   summaryCard: { backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },

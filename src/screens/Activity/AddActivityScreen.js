@@ -5,14 +5,19 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Input, Button } from '../../components';
+import { Header, Input, Button, AnimatedCard } from '../../components';
 import { activityCategories, projects } from '../../data/mockData';
+import { addActivity } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const AddActivityScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -34,6 +39,24 @@ export const AddActivityScreen = ({ navigation }) => {
     return iconMap[icon] || 'apps';
   };
 
+  const calculateDuration = () => {
+    return '1h 30m';
+  };
+
+  const handleSave = () => {
+    hapticFeedback('heavy');
+    addActivity({
+      title,
+      project: selectedProject ? selectedProject.name : 'Unassigned',
+      startTime,
+      endTime,
+      category: selectedCategory,
+      description,
+      duration: calculateDuration(),
+    });
+    navigation.goBack();
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Add Activity Log" onBack={() => navigation.goBack()} />
@@ -53,6 +76,7 @@ export const AddActivityScreen = ({ navigation }) => {
               placeholderTextColor={colors.textTertiary}
               value={title}
               onChangeText={setTitle}
+              accessibilityLabel="Activity title"
             />
           </View>
         </View>
@@ -60,8 +84,10 @@ export const AddActivityScreen = ({ navigation }) => {
         {/* Project Selection */}
         <View style={styles.field}>
           <Text style={styles.label}>Project or Client</Text>
-          <TouchableOpacity style={styles.dropdown}>
-            <Text style={styles.dropdownText}>Select a project...</Text>
+          <TouchableOpacity style={styles.dropdown} onPress={() => Alert.alert('Coming Soon', 'Project selection will be available in the next update.')} activeOpacity={0.7} accessibilityLabel="Select project">
+            <Text style={selectedProject ? styles.dropdownText : styles.dropdownPlaceholderText}>
+              {selectedProject ? selectedProject.name : 'Select a project...'}
+            </Text>
             <Ionicons name="chevron-down" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -70,14 +96,14 @@ export const AddActivityScreen = ({ navigation }) => {
         <View style={styles.timeRow}>
           <View style={[styles.field, styles.timeField]}>
             <Text style={styles.label}>Start Time</Text>
-            <TouchableOpacity style={styles.timeInput}>
+            <TouchableOpacity style={styles.timeInput} onPress={() => Alert.alert('Coming Soon', 'Time picker will be available in the next update.')} activeOpacity={0.7} accessibilityLabel="Select start time">
               <Text style={styles.timeText}>{startTime}</Text>
               <Ionicons name="time-outline" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           </View>
           <View style={[styles.field, styles.timeField]}>
             <Text style={styles.label}>End Time</Text>
-            <TouchableOpacity style={styles.timeInput}>
+            <TouchableOpacity style={styles.timeInput} onPress={() => Alert.alert('Coming Soon', 'Time picker will be available in the next update.')} activeOpacity={0.7} accessibilityLabel="Select end time">
               <Text style={styles.timeText}>{endTime}</Text>
               <Ionicons name="time-outline" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
@@ -89,7 +115,7 @@ export const AddActivityScreen = ({ navigation }) => {
           <Text style={styles.durationLabel}>Total Duration</Text>
           <View style={styles.durationBadge}>
             <Ionicons name="time-outline" size={14} color={colors.primary} />
-            <Text style={styles.durationText}>1h 30m</Text>
+            <Text style={styles.durationText}>{calculateDuration()}</Text>
           </View>
         </View>
 
@@ -104,7 +130,12 @@ export const AddActivityScreen = ({ navigation }) => {
                   styles.categoryChip,
                   selectedCategory === category.id && styles.activeCategoryChip,
                 ]}
-                onPress={() => setSelectedCategory(category.id)}
+                onPress={() => {
+                  hapticFeedback('light');
+                  setSelectedCategory(category.id);
+                }}
+                activeOpacity={0.7}
+                accessibilityLabel={`${category.name} category`}
               >
                 <Ionicons
                   name={getIconName(category.icon)}
@@ -137,8 +168,9 @@ export const AddActivityScreen = ({ navigation }) => {
               value={description}
               onChangeText={setDescription}
               maxLength={200}
+              accessibilityLabel="Activity description"
             />
-            <Text style={styles.charCount}>0/200</Text>
+            <Text style={styles.charCount}>{description.length}/200</Text>
           </View>
         </View>
       </ScrollView>
@@ -147,15 +179,14 @@ export const AddActivityScreen = ({ navigation }) => {
       <View style={styles.footer}>
         <Button
           title="Save Log"
-          onPress={() => navigation.goBack()}
+          onPress={handleSave}
           style={styles.saveButton}
+          accessibilityLabel="Save activity log"
         />
       </View>
     </View>
   );
 };
-
-import { TextInput } from 'react-native';
 
 const styles = StyleSheet.create({
   container: {
@@ -201,6 +232,10 @@ const styles = StyleSheet.create({
     height: 48,
   },
   dropdownText: {
+    ...typography.body,
+    color: colors.text,
+  },
+  dropdownPlaceholderText: {
     ...typography.body,
     color: colors.textTertiary,
   },

@@ -2,9 +2,11 @@
  * Karajo HR Mobile App
  * 
  * App Analysis:
- * - Screens Found: 50+ screens across 10 modules
- * - Navigation Pattern: Bottom Tab Navigator (5 tabs) with nested Stack Navigators
+ * - Screens: 54 screens across 13 modules
+ * - Navigation: Bottom Tab (5 tabs) with nested Stack Navigators
  * - Design System: Blue primary (#2563EB), clean white cards, rounded corners, subtle shadows
+ * - State: Store-based with AsyncStorage persistence
+ * - Services: API layer ready for backend integration
  * 
  * Modules:
  * 1. Home - Dashboard with attendance check-in, quick actions, recent updates
@@ -16,21 +18,27 @@
  * 7. Overtime - Overtime tracking and requests
  * 8. Finance - Payslips and expense management
  * 9. Profile - Employee profile and settings
- * 
- * Key Components:
- * - Button, Card, Badge, Header, Avatar, Input, ProgressBar, StatusTimeline
+ * 10. Penalty - Disciplinary actions and appeals
+ * 11. Employee - Directory, org chart, onboarding
+ * 12. Performance - KPIs, goals, reviews, 360 feedback
  */
 
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AuthProvider } from './src/context/AuthContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <AppNavigator />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <StatusBar style="dark" />
+          <AppNavigator />
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

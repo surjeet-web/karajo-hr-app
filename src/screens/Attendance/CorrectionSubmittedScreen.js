@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,9 +6,25 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 
-export const CorrectionSubmittedScreen = ({ navigation }) => {
+export const CorrectionSubmittedScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { checkInTime, checkOutTime, reason } = route?.params || {};
+
+  useEffect(() => {
+    hapticFeedback('success');
+  }, []);
+
+  const handleBackToAttendance = () => {
+    hapticFeedback('medium');
+    navigation.navigate('AttendanceHistory');
+  };
+
+  const handleViewStatus = () => {
+    hapticFeedback('medium');
+    navigation.navigate('AttendanceHistory');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -44,15 +60,40 @@ export const CorrectionSubmittedScreen = ({ navigation }) => {
             </View>
             <View>
               <Text style={styles.summaryLabel}>Corrected Time</Text>
-              <Text style={styles.summaryValue}>09:00 AM - 05:00 PM</Text>
+              <Text style={styles.summaryValue}>{checkInTime || '09:00 AM'} - {checkOutTime || '05:00 PM'}</Text>
             </View>
           </View>
+
+          {reason && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.summaryItem}>
+                <View style={styles.summaryIcon}>
+                  <Ionicons name="help-circle" size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.summaryLabel}>Reason</Text>
+                  <Text style={styles.summaryValue}>{reason}</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Button title="Back to Attendance" onPress={() => navigation.navigate('AttendanceHistory')} />
-        <Button title="View Request Status" variant="outline" onPress={() => navigation.navigate('AttendanceHistory')} style={styles.secondaryButton} />
+        <Button
+          title="Back to Attendance"
+          onPress={handleBackToAttendance}
+          accessibilityLabel="Back to attendance history"
+        />
+        <Button
+          title="View Request Status"
+          variant="outline"
+          onPress={handleViewStatus}
+          style={styles.secondaryButton}
+          accessibilityLabel="View correction request status"
+        />
       </View>
     </View>
   );

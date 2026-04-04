@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -7,15 +7,24 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Card, Badge, Button } from '../../components';
 import { getState, subscribe, requestOvertime } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { AnimatedListItem } from '../../components';
 
 export const OvertimeHomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
   const [activeTab, setActiveTab] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setAppState(getState());
+    setRefreshing(false);
   }, []);
 
   const { overtime } = appState;
@@ -23,8 +32,18 @@ export const OvertimeHomeScreen = ({ navigation }) => {
 
   const handleSubmit = () => {
     const today = new Date().toISOString().split('T')[0];
-    requestOvertime({ date: today, startTime: '18:00', endTime: '21:00', duration: 3, reason: 'Additional work hours' });
-    navigation.navigate('OvertimeSuccess');
+    const overtimeData = { date: today, startTime: '18:00', endTime: '21:00', duration: 3, reason: 'Additional work hours' };
+    requestOvertime(overtimeData);
+    navigation.navigate('OvertimeSuccess', overtimeData);
+  };
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'approved': return 'success';
+      case 'pending': return 'warning';
+      case 'rejected': return 'error';
+      default: return 'default';
+    }
   };
 
   return (
@@ -33,13 +52,23 @@ export const OvertimeHomeScreen = ({ navigation }) => {
 
       <View style={styles.tabsContainer}>
         {['all', 'pending', 'approved', 'rejected'].map(tab => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.activeTab]} onPress={() => setActiveTab(tab)}>
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => { hapticFeedback('light'); setActiveTab(tab); }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab }}
+            accessibilityLabel={`${tab} overtime requests`}
+          >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
         <Card style={styles.summaryCard} padding="lg">
           <Text style={styles.summaryLabel}>Total Approved OT</Text>
           <Text style={styles.summaryValue}>{overtime.totalApproved}h</Text>
@@ -53,7 +82,7 @@ export const OvertimeHomeScreen = ({ navigation }) => {
           <Card key={request.id} style={styles.requestCard} padding="md">
             <View style={styles.requestHeader}>
               <Text style={styles.requestDate}>{request.date}</Text>
-              <Badge text={request.status.charAt(0).toUpperCase() + request.status.slice(1)} variant={request.status === 'approved' ? 'success' : request.status === 'pending' ? 'warning' : 'error'} size="small" />
+              <Badge text={request.status.charAt(0).toUpperCase() + request.status.slice(1)} variant={getStatusVariant(request.status)} size="small" />
             </View>
             <Text style={styles.requestReason}>{request.reason}</Text>
             <View style={styles.timeRow}>
@@ -76,7 +105,12 @@ export const OvertimeHomeScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Request Overtime" icon={<Ionicons name="add" size={20} color={colors.textInverse} />} onPress={handleSubmit} />
+        <Button
+          title="Request Overtime"
+          icon={<Ionicons name="add" size={20} color={colors.textInverse} />}
+          onPress={() => { hapticFeedback('heavy'); handleSubmit(); }}
+          accessibilityLabel="Request overtime"
+        />
       </View>
     </View>
   );

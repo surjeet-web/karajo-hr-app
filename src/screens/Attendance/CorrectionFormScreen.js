@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button, ProgressBar } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { attendanceService } from '../../services';
 
-export const CorrectionFormScreen = ({ navigation }) => {
+export const CorrectionFormScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { selectedReason } = route?.params || {};
+  const [checkInTime, setCheckInTime] = useState('09:00 AM');
+  const [checkOutTime, setCheckOutTime] = useState('05:00 PM');
   const [reason, setReason] = useState('');
+  const MAX_CHARS = 200;
+
+  const handleReview = () => {
+    hapticFeedback('heavy');
+    navigation.navigate('CorrectionSummary', {
+      selectedReason,
+      checkInTime,
+      checkOutTime,
+      reason,
+    });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -29,16 +45,16 @@ export const CorrectionFormScreen = ({ navigation }) => {
 
         <View style={styles.field}>
           <Text style={styles.label}>Corrected Check-In Time</Text>
-          <TouchableOpacity style={styles.timeInput}>
-            <Text style={styles.timeText}>09:00 AM</Text>
+          <TouchableOpacity style={styles.timeInput} onPress={() => { hapticFeedback('light'); Alert.alert('Time Picker', 'Time picker coming soon'); }} activeOpacity={0.7} accessibilityLabel="Select check-in time">
+            <Text style={styles.timeText}>{checkInTime}</Text>
             <Ionicons name="time" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Corrected Check-Out Time</Text>
-          <TouchableOpacity style={styles.timeInput}>
-            <Text style={styles.timeText}>05:00 PM</Text>
+          <TouchableOpacity style={styles.timeInput} onPress={() => { hapticFeedback('light'); Alert.alert('Time Picker', 'Time picker coming soon'); }} activeOpacity={0.7} accessibilityLabel="Select check-out time">
+            <Text style={styles.timeText}>{checkOutTime}</Text>
             <Ionicons name="time" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -54,9 +70,12 @@ export const CorrectionFormScreen = ({ navigation }) => {
               numberOfLines={4}
               value={reason}
               onChangeText={setReason}
-              maxLength={200}
+              maxLength={MAX_CHARS}
+              accessibilityLabel="Reason for correction"
             />
-            <Text style={styles.charCount}>{reason.length}/200</Text>
+            <Text style={[styles.charCount, reason.length >= MAX_CHARS && styles.charCountMax]}>
+              {reason.length}/{MAX_CHARS}
+            </Text>
           </View>
         </View>
 
@@ -69,7 +88,7 @@ export const CorrectionFormScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Review Request" onPress={() => navigation.navigate('CorrectionSummary')} />
+        <Button title="Review Request" onPress={handleReview} accessibilityLabel="Review correction request" />
       </View>
     </View>
   );
@@ -89,6 +108,7 @@ const styles = StyleSheet.create({
   textAreaContainer: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.lg, padding: spacing.md },
   textArea: { ...typography.body, color: colors.text, minHeight: 100, textAlignVertical: 'top' },
   charCount: { ...typography.caption, color: colors.textTertiary, textAlign: 'right', marginTop: spacing.xs },
+  charCountMax: { color: colors.error },
   infoBox: { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.infoLight, padding: spacing.md, borderRadius: borderRadius.lg },
   infoText: { ...typography.bodySmall, color: colors.info, flex: 1 },
   footer: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },

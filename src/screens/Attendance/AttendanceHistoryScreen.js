@@ -1,20 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button } from '../../components';
+import { Header, Card, Badge, Button, AnimatedListItem } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 import { getState, subscribe } from '../../store';
 
 export const AttendanceHistoryScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setAppState(getState());
+      setRefreshing(false);
+    }, 1000);
   }, []);
 
   const { attendance } = appState;
@@ -37,11 +47,39 @@ export const AttendanceHistoryScreen = ({ navigation }) => {
     }
   };
 
+  const handleHistoryPress = (record) => {
+    hapticFeedback('medium');
+    navigation.navigate('AttendanceDetail', { record });
+  };
+
+  const handleFilterPress = () => {
+    hapticFeedback('light');
+    navigation.navigate('AttendanceFilter');
+  };
+
+  const handleCorrectionPress = () => {
+    hapticFeedback('medium');
+    navigation.navigate('CorrectionReason');
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Header title="Attendance" onBack={() => navigation.goBack()} />
+      <Header
+        title="Attendance"
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <TouchableOpacity onPress={handleFilterPress} activeOpacity={0.7} accessibilityLabel="Filter attendance">
+            <Ionicons name="filter" size={22} color={colors.primary} />
+          </TouchableOpacity>
+        }
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         {today.status !== 'not-checked-in' && (
           <Card padding="lg" style={styles.todayCard}>
             <View style={styles.todayHeader}>
@@ -98,35 +136,42 @@ export const AttendanceHistoryScreen = ({ navigation }) => {
           </Card>
         )}
 
-        <Text style={styles.sectionTitle}>History</Text>
+        <View style={styles.historyHeaderRow}>
+          <Text style={styles.sectionTitle}>History</Text>
+          <TouchableOpacity onPress={handleFilterPress} activeOpacity={0.7} accessibilityLabel="Filter history">
+            <Text style={styles.filterText}>Filter</Text>
+          </TouchableOpacity>
+        </View>
         {history.map((record, i) => {
           const badge = getStatusBadge(record.status);
           return (
-            <Card key={i} style={styles.historyCard} padding="md">
-              <View style={styles.historyHeader}>
-                <Text style={styles.historyDate}>{record.date}</Text>
-                <Badge text={badge.text} variant={badge.variant} size="small" />
-              </View>
-              <View style={styles.historyDetails}>
-                <View style={styles.historyDetail}>
-                  <Ionicons name="log-in-outline" size={14} color={colors.success} />
-                  <Text style={styles.historyDetailText}>{record.checkIn || '-'}</Text>
+            <AnimatedListItem key={i} index={i} onPress={() => handleHistoryPress(record)} accessibilityLabel={`Attendance record for ${record.date}`}>
+              <Card style={styles.historyCard} padding="md">
+                <View style={styles.historyHeader}>
+                  <Text style={styles.historyDate}>{record.date}</Text>
+                  <Badge text={badge.text} variant={badge.variant} size="small" />
                 </View>
-                <View style={styles.historyDetail}>
-                  <Ionicons name="log-out-outline" size={14} color={colors.error} />
-                  <Text style={styles.historyDetailText}>{record.checkOut || '-'}</Text>
+                <View style={styles.historyDetails}>
+                  <View style={styles.historyDetail}>
+                    <Ionicons name="log-in-outline" size={14} color={colors.success} />
+                    <Text style={styles.historyDetailText}>{record.checkIn || '-'}</Text>
+                  </View>
+                  <View style={styles.historyDetail}>
+                    <Ionicons name="log-out-outline" size={14} color={colors.error} />
+                    <Text style={styles.historyDetailText}>{record.checkOut || '-'}</Text>
+                  </View>
+                  <View style={styles.historyDetail}>
+                    <Ionicons name="hourglass-outline" size={14} color={colors.primary} />
+                    <Text style={styles.historyDetailText}>{record.totalHours > 0 ? record.totalHours + 'h' : '-'}</Text>
+                  </View>
                 </View>
-                <View style={styles.historyDetail}>
-                  <Ionicons name="hourglass-outline" size={14} color={colors.primary} />
-                  <Text style={styles.historyDetailText}>{record.totalHours > 0 ? record.totalHours + 'h' : '-'}</Text>
-                </View>
-              </View>
-            </Card>
+              </Card>
+            </AnimatedListItem>
           );
         })}
 
         <View style={styles.footer}>
-          <Button title="Request Correction" variant="outline" onPress={() => navigation.navigate('CorrectionReason')} />
+          <Button title="Request Correction" variant="outline" onPress={() => navigation.navigate('CorrectionReason')} accessibilityLabel="Request attendance correction" />
         </View>
       </ScrollView>
     </View>
@@ -152,7 +197,9 @@ const styles = StyleSheet.create({
   overtimeBanner: { marginBottom: spacing.md, backgroundColor: `${colors.accentPurple}10` },
   overtimeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   overtimeText: { ...typography.body, color: colors.accentPurple, fontWeight: '600' },
-  sectionTitle: { ...typography.label, color: colors.textTertiary, marginBottom: spacing.md, marginTop: spacing.lg },
+  historyHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md, marginTop: spacing.lg },
+  sectionTitle: { ...typography.label, color: colors.textTertiary },
+  filterText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' },
   historyCard: { marginBottom: spacing.md },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   historyDate: { ...typography.body, color: colors.text, fontWeight: '600' },

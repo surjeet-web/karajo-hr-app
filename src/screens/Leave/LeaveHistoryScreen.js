@@ -1,24 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge } from '../../components';
+import { Header, Card, Badge, AnimatedListItem } from '../../components';
+import { useFadeIn, useStaggerList } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 import { getState, subscribe } from '../../store';
 
 export const LeaveHistoryScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
   }, []);
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setAppState(getState());
+    setRefreshing(false);
+  }, []);
+
   const { leave } = appState;
   const requests = leave.requests;
+  const fadeIn = useFadeIn(400);
+  const staggerAnims = useStaggerList(requests.length, 80);
 
   const getStatusVariant = (status) => {
     switch (status) {
@@ -45,15 +56,24 @@ export const LeaveHistoryScreen = ({ navigation }) => {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Leave History" onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         {Object.entries(grouped).map(([month, items]) => (
           <View key={month}>
             <Text style={styles.sectionTitle}>{month}</Text>
-            {items.map((item) => {
+            {items.map((item, idx) => {
+              const globalIdx = Object.entries(grouped).reduce((acc, [m, arr]) => {
+                if (m === month) return acc;
+                return acc + arr.length;
+              }, 0) + idx;
               const startMonth = new Date(item.startDate).toLocaleString('default', { month: 'short' }).toUpperCase();
               const startDay = new Date(item.startDate).getDate();
               return (
-                <Card key={item.id} style={styles.historyCard} padding="md">
+                <AnimatedListItem key={item.id} style={styles.historyCard} animation={staggerAnims[globalIdx]} onPress={() => hapticFeedback('medium')}>
                   <View style={styles.historyHeader}>
                     <View style={styles.historyLeft}>
                       <View style={styles.dateBadge}>
@@ -71,7 +91,7 @@ export const LeaveHistoryScreen = ({ navigation }) => {
                     <Text style={styles.historyDates}>{item.startDate} to {item.endDate} ({item.days} days)</Text>
                     <Text style={styles.appliedDate}>Applied: {item.appliedOn}</Text>
                   </View>
-                </Card>
+                </AnimatedListItem>
               );
             })}
           </View>

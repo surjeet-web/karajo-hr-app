@@ -1,3 +1,4 @@
+import { hapticFeedback } from '../../utils/haptics';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,8 +29,8 @@ export const TimesheetSubmittedScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.footer}>
-        <Button title="Back to Activity" onPress={() => navigation.navigate('ActivityList')} style={styles.primaryButton} />
-        <Button title="Go to approval" variant="outline" onPress={() => navigation.navigate('ApprovalStatus')} style={styles.secondaryButton} />
+        <Button title="Back to Activity" onPress={() => { hapticFeedback('medium'); navigation.navigate('ActivityList'); }} style={styles.primaryButton} />
+        <Button title="Go to approval" variant="outline" onPress={() => { hapticFeedback('medium'); navigation.navigate('ApprovalStatus'); }} style={styles.secondaryButton} />
       </View>
     </View>
   );

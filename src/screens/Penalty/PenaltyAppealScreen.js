@@ -1,19 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button } from '../../components';
 import { penaltyData } from '../../data/mockData';
+import { hapticFeedback } from '../../animations/hooks';
 
 export const PenaltyAppealScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { penalty } = route.params || {};
   const [selectedType, setSelectedType] = useState(null);
   const [explanation, setExplanation] = useState('');
-  const [supportingDoc, setSupportingDoc] = useState(false);
+  const [supportingDoc, setSupportingDoc] = useState(null);
+
+  const pickDocument = async () => {
+    hapticFeedback('light');
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      Alert.alert('Permission Required', 'Please allow access to your media library to upload documents.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setSupportingDoc(result.assets[0].uri);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -72,7 +91,7 @@ export const PenaltyAppealScreen = ({ navigation, route }) => {
 
         <View style={styles.field}>
           <Text style={styles.label}>Supporting Documents</Text>
-          <TouchableOpacity style={styles.uploadArea} onPress={() => setSupportingDoc(true)}>
+          <TouchableOpacity style={styles.uploadArea} onPress={pickDocument} accessibilityLabel="Upload supporting document" accessibilityRole="button">
             <View style={styles.uploadIcon}>
               <Ionicons name="cloud-upload" size={28} color={supportingDoc ? colors.success : colors.primary} />
             </View>
@@ -95,13 +114,13 @@ export const PenaltyAppealScreen = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Button
-          title="Submit Appeal"
-          onPress={() => navigation.navigate('PenaltyReview', { penalty, appealType: selectedType, explanation })}
-          disabled={!selectedType || !explanation.trim()}
-        />
-      </View>
+        <View style={styles.footer}>
+          <Button
+            title="Continue to Review"
+            onPress={() => { hapticFeedback('medium'); navigation.navigate('PenaltyReview', { penalty, appealType: selectedType, explanation, supportingDoc }); }}
+            disabled={!selectedType || !explanation.trim()}
+          />
+        </View>
     </View>
   );
 };

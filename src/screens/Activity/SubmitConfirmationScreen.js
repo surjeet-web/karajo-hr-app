@@ -1,15 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Button, ProgressBar } from '../../components';
+import { Header, Button, ProgressBar, AnimatedCard } from '../../components';
+import { submitTimesheet } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const SubmitConfirmationScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [confirmed, setConfirmed] = useState(false);
+  const [breakdownExpanded, setBreakdownExpanded] = useState(false);
+  const fadeAnim = useFadeIn();
+  const slideAnim = useSlideIn();
+
+  const handleSubmit = () => {
+    if (!confirmed) return;
+    hapticFeedback('heavy');
+    submitTimesheet({
+      hours: 38.5,
+      period: 'Feb 22 - 28',
+      activities: 14,
+    });
+    navigation.navigate('TimesheetSubmitted');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -48,25 +65,45 @@ export const SubmitConfirmationScreen = ({ navigation }) => {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.breakdownRow}>
+          <TouchableOpacity
+            style={styles.breakdownRow}
+            onPress={() => {
+              hapticFeedback('light');
+              setBreakdownExpanded(!breakdownExpanded);
+            }}
+            activeOpacity={0.7}
+            accessibilityLabel="View activity breakdown"
+          >
             <View style={styles.breakdownIconRow}>
               <Ionicons name="document-text" size={18} color={colors.primary} />
               <Text style={styles.breakdownText}>View Activity Breakdown</Text>
             </View>
-            <Ionicons name="chevron-down" size={20} color={colors.textTertiary} />
+            <Ionicons name={breakdownExpanded ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textTertiary} />
           </TouchableOpacity>
 
-          <View style={styles.activitiesList}>
-            {['Frontend Development', 'Sprint Planning', 'Design System Update', 'Code Review & Merge'].map((activity, index) => (
-              <View key={index} style={styles.activityItem}>
-                <Text style={styles.activityName}>{activity}</Text>
-                <Text style={styles.activityHours}>3h 15m</Text>
-              </View>
-            ))}
-          </View>
+          {breakdownExpanded && (
+            <View style={styles.activitiesList}>
+              {['Frontend Development', 'Sprint Planning', 'Design System Update', 'Code Review & Merge'].map((activity, index) => (
+                <View key={index} style={styles.activityItem}>
+                  <Text style={styles.activityName}>{activity}</Text>
+                  <Text style={styles.activityHours}>3h 15m</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
-        <TouchableOpacity style={styles.checkboxRow} onPress={() => setConfirmed(!confirmed)}>
+        <TouchableOpacity
+          style={styles.checkboxRow}
+          onPress={() => {
+            hapticFeedback('light');
+            setConfirmed(!confirmed);
+          }}
+          activeOpacity={0.7}
+          accessibilityLabel={confirmed ? 'Unconfirm accuracy' : 'Confirm accuracy'}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: confirmed }}
+        >
           <View style={[styles.checkbox, confirmed && styles.checkboxChecked]}>
             {confirmed && <Ionicons name="checkmark" size={16} color={colors.textInverse} />}
           </View>
@@ -75,7 +112,14 @@ export const SubmitConfirmationScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Submit Timesheet" onPress={() => navigation.navigate('TimesheetSubmitted')} style={styles.submitButton} icon={<Ionicons name="play" size={18} color={colors.textInverse} />} />
+        <Button
+          title="Submit Timesheet"
+          onPress={handleSubmit}
+          style={[styles.submitButton, !confirmed && styles.disabledButton]}
+          icon={<Ionicons name="play" size={18} color={colors.textInverse} />}
+          disabled={!confirmed}
+          accessibilityLabel="Submit timesheet"
+        />
       </View>
     </View>
   );
@@ -110,4 +154,5 @@ const styles = StyleSheet.create({
   checkboxText: { ...typography.bodySmall, color: colors.textSecondary, flex: 1 },
   footer: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
   submitButton: { width: '100%' },
+  disabledButton: { opacity: 0.5 },
 });

@@ -1,3 +1,4 @@
+import { hapticFeedback } from '../../utils/haptics';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,18 +7,33 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button, Badge } from '../../components';
+import { getState, subscribe } from '../../store';
 
-export const AttendanceSuccessScreen = ({ navigation }) => {
+export const AttendanceSuccessScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const [appState, setAppState] = React.useState(getState());
+
+  React.useEffect(() => {
+    const unsubscribe = subscribe(setAppState);
+    return unsubscribe;
+  }, []);
+
+  const { attendance } = appState;
+  const { today } = attendance;
+  const checkInTime = today.checkIn || '08:58 AM';
+  const isOnTime = today.status === 'on-time';
+
+  const todayDate = new Date();
+  const dateStr = todayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={() => { hapticFeedback('medium'); navigation.navigate('Home'); }} accessibilityLabel="Close and go to home">
           <Ionicons name="close" size={24} color={colors.textInverse} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>ATTENDANCE VERIFIED</Text>
-        <TouchableOpacity>
+        <TouchableOpacity accessibilityLabel="Help">
           <Ionicons name="help-circle-outline" size={24} color={colors.textInverse} />
         </TouchableOpacity>
       </View>
@@ -38,8 +54,8 @@ export const AttendanceSuccessScreen = ({ navigation }) => {
 
           <View style={styles.timeContainer}>
             <Text style={styles.timeLabel}>TIME RECORDED</Text>
-            <Text style={styles.timeValue}>08:58 AM</Text>
-            <Badge text="On time" variant="success" style={styles.timeBadge} />
+            <Text style={styles.timeValue}>{checkInTime}</Text>
+            <Badge text={isOnTime ? 'On time' : today.status} variant={isOnTime ? 'success' : 'warning'} style={styles.timeBadge} />
           </View>
 
           <View style={styles.detailsContainer}>
@@ -49,7 +65,7 @@ export const AttendanceSuccessScreen = ({ navigation }) => {
               </View>
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>Location</Text>
-                <Text style={styles.detailValue}>Headquarters, Jak...</Text>
+                <Text style={styles.detailValue}>{today.location || 'Headquarters, Jak...'}</Text>
               </View>
               <Badge text="On site" variant="default" size="small" />
             </View>
@@ -60,7 +76,7 @@ export const AttendanceSuccessScreen = ({ navigation }) => {
               </View>
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>Date</Text>
-                <Text style={styles.detailValue}>Feb 18, 2025</Text>
+                <Text style={styles.detailValue}>{dateStr}</Text>
               </View>
             </View>
           </View>
@@ -71,9 +87,10 @@ export const AttendanceSuccessScreen = ({ navigation }) => {
         <Button
           title="Back to Home"
           variant="outline"
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => { hapticFeedback('medium'); navigation.navigate('Home'); }}
           style={styles.homeButton}
           textStyle={styles.homeButtonText}
+          accessibilityLabel="Back to home screen"
         />
       </View>
     </View>

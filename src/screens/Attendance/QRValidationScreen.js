@@ -1,21 +1,48 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Badge } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { attendanceService } from '../../services';
 
 export const QRValidationScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState('qr');
+  const [scanning, setScanning] = useState(false);
+  const [scanComplete, setScanComplete] = useState(false);
+  const [scanStatus, setScanStatus] = useState('active');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setScanning(true);
+      setTimeout(() => {
+        setScanning(false);
+        setScanComplete(true);
+        setScanStatus('verified');
+        hapticFeedback('success');
+        setTimeout(() => {
+          navigation.navigate('AttendanceSuccess');
+        }, 800);
+      }, 2500);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="QR Identity Validation" onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
-        <Badge text="SCANNER ACTIVE" variant="success" size="small" style={styles.statusBadge} />
+        {scanStatus === 'active' && (
+          <Badge text="SCANNER ACTIVE" variant="success" size="small" style={styles.statusBadge} />
+        )}
+        {scanStatus === 'verified' && (
+          <Badge text="QR VERIFIED" variant="success" size="small" style={styles.statusBadge} />
+        )}
 
         {/* QR Frame */}
         <View style={styles.qrFrame}>
@@ -24,8 +51,21 @@ export const QRValidationScreen = ({ navigation }) => {
           <View style={styles.cornerBL} />
           <View style={styles.cornerBR} />
           <View style={styles.qrCode}>
-            <Ionicons name="qr-code" size={120} color={colors.text} />
+            <Ionicons name="qr-code" size={120} color={scanComplete ? colors.success : colors.text} />
           </View>
+          {scanning && (
+            <View style={styles.scanningOverlay}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.scanningText}>Scanning QR...</Text>
+            </View>
+          )}
+          {scanComplete && (
+            <View style={styles.scanningOverlay}>
+              <View style={styles.successBadge}>
+                <Ionicons name="checkmark-circle" size={40} color={colors.success} />
+              </View>
+            </View>
+          )}
         </View>
 
         <Text style={styles.title}>Scan QR Code</Text>
@@ -35,11 +75,23 @@ export const QRValidationScreen = ({ navigation }) => {
 
         {/* Tab Switcher */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('FaceValidation')}>
+          <TouchableOpacity
+            style={styles.tab}
+            onPress={() => { hapticFeedback('light'); navigation.navigate('FaceValidation'); }}
+            activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityLabel="Face validation tab"
+          >
             <Ionicons name="happy" size={18} color={colors.textSecondary} />
             <Text style={styles.tabText}>Face</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, styles.activeTab]}>
+          <TouchableOpacity
+            style={[styles.tab, styles.activeTab]}
+            activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: true }}
+            accessibilityLabel="QR Code validation tab"
+          >
             <Ionicons name="qr-code" size={18} color={colors.primary} />
             <Text style={[styles.tabText, styles.activeTabText]}>QR Code</Text>
           </TouchableOpacity>
@@ -64,6 +116,9 @@ const styles = StyleSheet.create({
   cornerBL: { position: 'absolute', bottom: 0, left: 0, width: 40, height: 40, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: colors.primary },
   cornerBR: { position: 'absolute', bottom: 0, right: 0, width: 40, height: 40, borderBottomWidth: 4, borderRightWidth: 4, borderColor: colors.primary },
   qrCode: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scanningOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
+  scanningText: { ...typography.bodySmall, color: colors.text, marginTop: spacing.sm },
+  successBadge: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
   title: { ...typography.h4, color: colors.text, marginBottom: spacing.sm },
   subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: spacing.xl, marginBottom: spacing.xxl },
   tabContainer: { flexDirection: 'row', backgroundColor: colors.surface, borderRadius: borderRadius.full, padding: spacing.xs },

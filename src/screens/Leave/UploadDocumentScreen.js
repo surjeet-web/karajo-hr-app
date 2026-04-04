@@ -1,17 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button, ProgressBar } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const UploadDocumentScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { leaveType, startDate, endDate, days } = route.params || {};
+  const { leaveType, startDate, endDate, days, delegate } = route.params || {};
   const [reason, setReason] = useState('');
-  const [delegate, setDelegate] = useState('');
+  const [delegateInput, setDelegateInput] = useState(delegate || '');
+  const [document, setDocument] = useState(null);
+
+  const handlePickDocument = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your media library to upload documents.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'pdf'],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        setDocument(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -34,6 +57,8 @@ export const UploadDocumentScreen = ({ navigation, route }) => {
               value={reason}
               onChangeText={setReason}
               maxLength={300}
+              accessible
+              accessibilityLabel="Reason for leave"
             />
             <Text style={styles.charCount}>{reason.length}/300</Text>
           </View>
@@ -47,21 +72,29 @@ export const UploadDocumentScreen = ({ navigation, route }) => {
               style={styles.input}
               placeholder="Who will cover your responsibilities?"
               placeholderTextColor={colors.textTertiary}
-              value={delegate}
-              onChangeText={setDelegate}
+              value={delegateInput}
+              onChangeText={setDelegateInput}
+              accessible
+              accessibilityLabel="Delegate name"
             />
           </View>
         </View>
 
-        <View style={styles.uploadArea}>
+        <TouchableOpacity style={styles.uploadArea} onPress={handlePickDocument} accessible accessibilityLabel="Upload document, tap to select from library" accessibilityRole="button">
           <Ionicons name="cloud-upload" size={32} color={colors.primary} />
           <Text style={styles.uploadTitle}>Upload Document (Optional)</Text>
           <Text style={styles.uploadSubtitle}>PDF, JPG, PNG (max 5MB)</Text>
-        </View>
+          {document && (
+            <View style={styles.uploadedFile}>
+              <Ionicons name="document" size={16} color={colors.success} />
+              <Text style={styles.uploadedFileName} numberOfLines={1}>{document.fileName || 'Selected file'}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Continue" onPress={() => navigation.navigate('LeaveReview', { leaveType, startDate, endDate, days, reason, delegate })} />
+        <Button title="Continue" onPress={() => { hapticFeedback('heavy'); navigation.navigate('LeaveReview', { leaveType, startDate, endDate, days, reason, delegate: delegateInput, document }); }} />
       </View>
     </View>
   );
@@ -82,5 +115,7 @@ const styles = StyleSheet.create({
   uploadArea: { backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.xl, alignItems: 'center', borderWidth: 2, borderColor: colors.border, borderStyle: 'dashed', marginBottom: spacing.lg },
   uploadTitle: { ...typography.h5, color: colors.text, marginTop: spacing.md, marginBottom: spacing.xs },
   uploadSubtitle: { ...typography.bodySmall, color: colors.textTertiary },
+  uploadedFile: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.md, backgroundColor: colors.successLight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm },
+  uploadedFileName: { ...typography.bodySmall, color: colors.success, fontWeight: '500', flex: 1 },
   footer: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
 });

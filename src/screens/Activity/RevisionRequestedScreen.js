@@ -1,14 +1,34 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Avatar, Button } from '../../components';
+import { Header, Avatar, Button, AnimatedListItem } from '../../components';
+import { submitTimesheet } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
-export const RevisionRequestedScreen = ({ navigation }) => {
+export const RevisionRequestedScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const revisionData = route.params?.revision;
+
+  const entries = revisionData?.entries || [
+    { day: 'Monday, Oct 23', hours: '8.0 hrs', status: 'ok' },
+    { day: 'Tuesday, Oct 24', hours: '7.5 hrs', status: 'ok' },
+    { day: 'Friday, Oct 27', hours: 'Correction Needed', status: 'error', activities: [{ name: 'UX Research', project: 'Project Alpha', hours: '4.0h' }, { name: 'Design System', project: 'Internal Ops', hours: '4.0h' }] },
+  ];
+
+  const handleResubmit = () => {
+    hapticFeedback('heavy');
+    submitTimesheet({
+      hours: 23.5,
+      period: 'Oct 23 - Oct 27',
+      activities: entries.length,
+    });
+    navigation.navigate('TimesheetSubmitted');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -36,12 +56,10 @@ export const RevisionRequestedScreen = ({ navigation }) => {
             <Text style={styles.entriesPeriod}>Oct 23 - Oct 27</Text>
           </View>
 
-          {[
-            { day: 'Monday, Oct 23', hours: '8.0 hrs', status: 'ok' },
-            { day: 'Tuesday, Oct 24', hours: '7.5 hrs', status: 'ok' },
-            { day: 'Friday, Oct 27', hours: 'Correction Needed', status: 'error', activities: [{ name: 'UX Research', project: 'Project Alpha', hours: '4.0h' }, { name: 'Design System', project: 'Internal Ops', hours: '4.0h' }] },
-          ].map((entry, index) => (
-            <View key={index} style={styles.entryRow}>
+          {entries.map((entry, index) => (
+            <AnimatedListItem key={index} index={index} style={styles.entryRow} onPress={() => {
+              hapticFeedback('medium');
+            }}>
               <View style={styles.entryLeft}>
                 <Ionicons name="calendar-outline" size={18} color={colors.textTertiary} />
                 <View>
@@ -54,17 +72,20 @@ export const RevisionRequestedScreen = ({ navigation }) => {
                   <Ionicons name="checkmark-circle" size={24} color={colors.success} />
                 </View>
               ) : (
-                <View style={styles.editIcon}>
+                <TouchableOpacity style={styles.editIcon} onPress={() => {
+                  hapticFeedback('medium');
+                  navigation.navigate('EditActivity');
+                }} activeOpacity={0.7} accessibilityLabel="Edit entry">
                   <Ionicons name="create" size={18} color={colors.warning} />
-                </View>
+                </TouchableOpacity>
               )}
-            </View>
+            </AnimatedListItem>
           ))}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Resubmit" onPress={() => navigation.navigate('TimesheetSubmitted')} icon={<Ionicons name="play" size={18} color={colors.textInverse} />} />
+        <Button title="Resubmit" onPress={handleResubmit} icon={<Ionicons name="play" size={18} color={colors.textInverse} />} accessibilityLabel="Resubmit timesheet" />
       </View>
     </View>
   );

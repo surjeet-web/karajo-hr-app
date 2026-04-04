@@ -1,16 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Button, ProgressBar } from '../../components';
+import { Header, Button, ProgressBar, AnimatedListItem } from '../../components';
+import { useFadeIn, useSlideIn, useStaggerList } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 import { colleagues } from '../../data/mockData';
 
-export const SelectDelegateScreen = ({ navigation }) => {
+export const SelectDelegateScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { leaveType, startDate, endDate, days } = route.params || {};
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedDelegate, setSelectedDelegate] = useState(null);
+  const fadeIn = useFadeIn(400);
+  const slideUp = useSlideIn('up', 20, 500, 100);
+  const staggerAnims = useStaggerList(filteredColleagues?.length || colleagues.length, 80);
+
+  const filteredColleagues = colleagues.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleContinue = () => {
+    const delegateName = selectedDelegate
+      ? colleagues.find(c => c.id === selectedDelegate)?.name || ''
+      : '';
+    navigation.navigate('UploadDocument', {
+      leaveType,
+      startDate,
+      endDate,
+      days,
+      delegate: delegateName,
+    });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -23,17 +48,29 @@ export const SelectDelegateScreen = ({ navigation }) => {
 
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={colors.textTertiary} />
-          <Text style={styles.searchPlaceholder}>Search colleagues...</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search colleagues..."
+            placeholderTextColor={colors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            accessible
+            accessibilityLabel="Search colleagues"
+          />
         </View>
 
         <Text style={styles.sectionTitle}>Suggested Colleagues</Text>
 
         <View style={styles.colleaguesList}>
-          {colleagues.map((colleague) => (
+          {filteredColleagues.map((colleague) => (
             <TouchableOpacity
               key={colleague.id}
               style={[styles.colleagueItem, selectedDelegate === colleague.id && styles.colleagueItemSelected]}
               onPress={() => setSelectedDelegate(colleague.id)}
+              accessible
+              accessibilityLabel={`${colleague.name}, ${colleague.role}`}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedDelegate === colleague.id }}
             >
               <Image source={{ uri: colleague.avatar }} style={styles.colleagueAvatar} />
               <View style={styles.colleagueInfo}>
@@ -56,7 +93,7 @@ export const SelectDelegateScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Continue" onPress={() => navigation.navigate('UploadDocument')} />
+        <Button title="Continue" onPress={handleContinue} />
       </View>
     </View>
   );
@@ -68,6 +105,7 @@ const styles = StyleSheet.create({
   heading: { ...typography.h4, color: colors.text, marginBottom: spacing.sm },
   subheading: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.lg },
   searchContainer: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surface, borderRadius: borderRadius.lg, paddingHorizontal: spacing.md, height: 48, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+  searchInput: { flex: 1, ...typography.body, color: colors.text },
   searchPlaceholder: { ...typography.body, color: colors.textTertiary },
   sectionTitle: { ...typography.label, color: colors.textTertiary, marginBottom: spacing.md },
   colleaguesList: { gap: spacing.md, marginBottom: spacing.lg },

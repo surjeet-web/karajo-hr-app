@@ -6,6 +6,7 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button, ProgressBar } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 import { requestLeave } from '../../store';
 
 export const LeaveReviewScreen = ({ navigation, route }) => {
@@ -19,6 +20,7 @@ export const LeaveReviewScreen = ({ navigation, route }) => {
   };
 
   const handleSubmit = () => {
+    hapticFeedback('heavy');
     requestLeave({ type: leaveType, startDate, endDate, reason: reason || 'Leave request', delegate });
     navigation.navigate('LeaveSuccess', { leaveType, startDate, endDate, days, reason });
   };
@@ -101,7 +103,7 @@ export const LeaveReviewScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Submit Leave Request" onPress={handleSubmit} />
+        <Button title="Submit Leave Request" onPress={handleSubmit} accessible accessibilityLabel="Submit leave request" accessibilityRole="button" />
       </View>
     </View>
   );

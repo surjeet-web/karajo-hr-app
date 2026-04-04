@@ -6,11 +6,24 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button, ProgressBar } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 import { correctionReasons } from '../../data/mockData';
+import { attendanceService } from '../../services';
 
-export const CorrectionReasonScreen = ({ navigation }) => {
+export const CorrectionReasonScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const [selectedReason, setSelectedReason] = useState('forgot-checkin');
+  const [selectedReason, setSelectedReason] = useState(null);
+
+  const handleReasonSelect = (id) => {
+    hapticFeedback('light');
+    setSelectedReason(id);
+  };
+
+  const handleContinue = () => {
+    if (!selectedReason) return;
+    hapticFeedback('heavy');
+    navigation.navigate('CorrectionForm', { selectedReason });
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -24,20 +37,27 @@ export const CorrectionReasonScreen = ({ navigation }) => {
         <Text style={styles.sectionLabel}>SELECT REASON</Text>
 
         <View style={styles.reasonsList}>
-          {correctionReasons.map((reason) => (
-            <TouchableOpacity
-              key={reason.id}
-              style={[styles.reasonItem, selectedReason === reason.id && styles.reasonItemSelected]}
-              onPress={() => setSelectedReason(reason.id)}
-            >
-              <View style={[styles.radio, selectedReason === reason.id && styles.radioSelected]}>
-                {selectedReason === reason.id && <View style={styles.radioInner} />}
-              </View>
-              <Text style={[styles.reasonText, selectedReason === reason.id && styles.reasonTextSelected]}>
-                {reason.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {correctionReasons.map((reason) => {
+            const isSelected = selectedReason === reason.id;
+            return (
+              <TouchableOpacity
+                key={reason.id}
+                style={[styles.reasonItem, isSelected && styles.reasonItemSelected]}
+                onPress={() => handleReasonSelect(reason.id)}
+                activeOpacity={0.7}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={`${reason.label}${isSelected ? ', selected' : ''}`}
+              >
+                <View style={[styles.radio, isSelected && styles.radioSelected]}>
+                  {isSelected && <View style={styles.radioInner} />}
+                </View>
+                <Text style={[styles.reasonText, isSelected && styles.reasonTextSelected]}>
+                  {reason.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.infoBox}>
@@ -49,7 +69,12 @@ export const CorrectionReasonScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Continue" onPress={() => navigation.navigate('CorrectionForm')} />
+        <Button
+          title="Continue"
+          onPress={handleContinue}
+          disabled={!selectedReason}
+          accessibilityLabel="Continue to correction form"
+        />
       </View>
     </View>
   );

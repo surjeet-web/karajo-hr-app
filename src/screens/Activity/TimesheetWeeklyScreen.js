@@ -1,42 +1,64 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Card, Badge } from '../../components';
+import { Card, Badge, AnimatedListItem } from '../../components';
 import { activityData } from '../../data/mockData';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 
 export const TimesheetWeeklyScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const weekly = activityData.weekly;
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(0);
+
+  const goPrevWeek = () => {
+    setCurrentWeekIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const goNextWeek = () => {
+    setCurrentWeekIndex(prev => Math.min(2, prev + 1));
+  };
+
+  const getCategoryColor = (category) => {
+    const colorMap = {
+      Development: colors.primary,
+      Meeting: colors.accentPurple,
+      Admin: colors.warning,
+      Design: colors.accentPink,
+      QA: colors.success,
+    };
+    return colorMap[category] || colors.textSecondary;
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={styles.dateNavigator}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={goPrevWeek} activeOpacity={0.7} accessibilityLabel="Previous week">
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.dateContainer}>
-            <Text style={styles.dateText}>Feb 22 - Feb 28</Text>
+            <Text style={styles.dateText}>{weekly.period}</Text>
             <Text style={styles.dayText}>This Week</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={goNextWeek} activeOpacity={0.7} accessibilityLabel="Next week">
             <Ionicons name="chevron-forward" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.tabsContainer}>
-        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('ActivityList')}>
+        <TouchableOpacity style={styles.tab} onPress={() => { hapticFeedback('light'); navigation.navigate('ActivityList'); }} activeOpacity={0.7} accessibilityLabel="Daily view">
           <Text style={styles.tabText}>Daily</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, styles.activeTab]}>
+        <TouchableOpacity style={[styles.tab, styles.activeTab]} activeOpacity={0.7} accessibilityLabel="Weekly view">
           <Text style={[styles.tabText, styles.activeTabText]}>Weekly</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('TimesheetMonthly')}>
+        <TouchableOpacity style={styles.tab} onPress={() => { hapticFeedback('light'); navigation.navigate('TimesheetMonthly'); }} activeOpacity={0.7} accessibilityLabel="Monthly view">
           <Text style={styles.tabText}>Monthly</Text>
         </TouchableOpacity>
       </View>
@@ -100,14 +122,17 @@ export const TimesheetWeeklyScreen = ({ navigation }) => {
               <Text style={styles.dayTotal}>{day.total} Total</Text>
             </View>
             {day.activities.map((activity, actIndex) => (
-              <Card key={actIndex} style={styles.activityCard} padding="md">
+              <AnimatedListItem key={actIndex} index={actIndex} style={styles.activityCard} onPress={() => {
+                hapticFeedback('medium');
+                navigation.navigate('ActivityDetail', { activity });
+              }}>
                 <View style={styles.activityHeader}>
                   <Text style={styles.activityTitle}>{activity.title}</Text>
                   <Text style={styles.activityDuration}>{activity.duration}</Text>
                 </View>
                 <View style={styles.activityMeta}>
                   <View style={styles.categoryRow}>
-                    <View style={[styles.categoryDot, { backgroundColor: colors.primary }]} />
+                    <View style={[styles.categoryDot, { backgroundColor: getCategoryColor(activity.category) }]} />
                     <Text style={styles.projectText}>{activity.project}</Text>
                   </View>
                 </View>
@@ -115,18 +140,18 @@ export const TimesheetWeeklyScreen = ({ navigation }) => {
                   <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
                   <Text style={styles.timeText}>{activity.time}</Text>
                 </View>
-              </Card>
+              </AnimatedListItem>
             ))}
           </View>
         ))}
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.submitButton} onPress={() => navigation.navigate('SubmitConfirmation')}>
+        <TouchableOpacity style={styles.submitButton} onPress={() => { hapticFeedback('heavy'); navigation.navigate('SubmitConfirmation'); }} activeOpacity={0.7} accessibilityLabel="Submit timesheet">
           <Ionicons name="play" size={18} color={colors.textInverse} />
           <Text style={styles.submitButtonText}>Submit Timesheet</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddActivity')}>
+        <TouchableOpacity style={styles.fab} onPress={() => { hapticFeedback('medium'); navigation.navigate('AddActivity'); }} activeOpacity={0.7} accessibilityLabel="Add new activity">
           <Ionicons name="add" size={24} color={colors.textInverse} />
         </TouchableOpacity>
       </View>

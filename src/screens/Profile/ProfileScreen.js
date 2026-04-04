@@ -1,41 +1,70 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header } from '../../components';
-import { currentUser } from '../../data/mockData';
+import { Header, Button, AnimatedListItem } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
+import { getState, resetState } from '../../store';
 
 export const ProfileScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const user = getState().user;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
+
+  const handleLogout = () => {
+    hapticFeedback('medium');
+    resetState();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   const menuItems = [
-    { icon: 'person-outline', title: 'Personal Information', subtitle: 'Contact details, address, and emergency' },
-    { icon: 'shield-checkmark-outline', title: 'Identity Verification', subtitle: 'Passport, ID card, tax information' },
-    { icon: 'briefcase-outline', title: 'Employment Information', subtitle: 'Position, department, employment details' },
+    { icon: 'person-outline', title: 'Personal Information', subtitle: 'Contact details, address, and emergency', route: 'PersonalInfo' },
+    { icon: 'shield-checkmark-outline', title: 'Identity Verification', subtitle: 'Passport, ID card, tax information', route: 'IdentityVerification' },
+    { icon: 'briefcase-outline', title: 'Employment Information', subtitle: 'Position, department, employment details', route: 'EmploymentInfo' },
   ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Profile" onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+      >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
-          <Text style={styles.name}>{currentUser.name}</Text>
-          <Text style={styles.role}>{currentUser.role} • {currentUser.department}</Text>
+          <Image source={{ uri: user.avatar }} style={styles.avatar} />
+          <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.role}>{user.role} • {user.department}</Text>
           <View style={styles.idBadge}>
-            <Text style={styles.idText}>ID: {currentUser.id}</Text>
+            <Text style={styles.idText}>ID: {user.id}</Text>
           </View>
         </View>
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.menuItem}>
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={() => { hapticFeedback('light'); navigation.navigate(item.route); }}
+              accessibilityLabel={`${item.title}: ${item.subtitle}`}
+              accessibilityRole="button"
+            >
               <View style={styles.menuIcon}>
                 <Ionicons name={item.icon} size={22} color={colors.primary} />
               </View>
@@ -46,6 +75,16 @@ export const ProfileScreen = ({ navigation }) => {
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Logout Button */}
+        <View style={styles.logoutContainer}>
+          <Button
+            title="Log Out"
+            variant="outline"
+            onPress={handleLogout}
+            icon={<Ionicons name="log-out-outline" size={20} color={colors.error} />}
+          />
         </View>
       </ScrollView>
     </View>
@@ -67,4 +106,5 @@ const styles = StyleSheet.create({
   menuInfo: { flex: 1 },
   menuTitle: { ...typography.body, color: colors.text, fontWeight: '600' },
   menuSubtitle: { ...typography.bodySmall, color: colors.textSecondary, marginTop: spacing.xs },
+  logoutContainer: { marginTop: spacing.xl },
 });

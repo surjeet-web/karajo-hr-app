@@ -1,21 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button } from '../../components';
+import { Header, Card, Badge, Button, AnimatedListItem } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn } from '../../utils/animations';
 import { getState, subscribe, submitExpense } from '../../store';
 
-export const ExpenseOverviewScreen = ({ navigation }) => {
+export const ExpenseOverviewScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
   const [activeTab, setActiveTab] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const fadeIn = useFadeIn();
+  const slideIn = useSlideIn();
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
     return unsubscribe;
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setAppState(getState());
+    setRefreshing(false);
   }, []);
 
   const { expenses } = appState;
@@ -45,48 +56,108 @@ export const ExpenseOverviewScreen = ({ navigation }) => {
     }
   };
 
+  const handleCreateExpense = () => {
+    hapticFeedback('heavy');
+    navigation.navigate('ExpenseOverview', { mode: 'create' });
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Expenses" onBack={() => navigation.goBack()} />
 
       <View style={styles.summaryRow}>
-        <TouchableOpacity style={[styles.summaryItem, activeTab === 'pending' && styles.summaryItemActive]} onPress={() => setActiveTab('pending')}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.summaryItem, activeTab === 'pending' && styles.summaryItemActive]}
+          onPress={() => {
+            hapticFeedback('medium');
+            setActiveTab('pending');
+          }}
+          accessibilityRole="button"
+          accessibilityState={{ selected: activeTab === 'pending' }}
+          accessibilityLabel={`Pending expenses: $${pendingTotal.toLocaleString()}`}
+        >
           <Text style={styles.summaryLabel}>Pending</Text>
           <Text style={styles.summaryValue}>${pendingTotal.toLocaleString()}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.summaryItem, styles.summaryItemPrimary, activeTab === 'approved' && styles.summaryItemActive]} onPress={() => setActiveTab('approved')}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.summaryItem, styles.summaryItemPrimary, activeTab === 'approved' && styles.summaryItemActive]}
+          onPress={() => {
+            hapticFeedback('medium');
+            setActiveTab('approved');
+          }}
+          accessibilityRole="button"
+          accessibilityState={{ selected: activeTab === 'approved' }}
+          accessibilityLabel={`Approved expenses: $${approvedTotal.toLocaleString()}`}
+        >
           <Text style={[styles.summaryLabel, styles.summaryLabelLight]}>Approved</Text>
           <Text style={[styles.summaryValue, styles.summaryValueLight]}>${approvedTotal.toLocaleString()}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.summaryItem, activeTab === 'rejected' && styles.summaryItemActive]} onPress={() => setActiveTab('rejected')}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.summaryItem, activeTab === 'rejected' && styles.summaryItemActive]}
+          onPress={() => {
+            hapticFeedback('medium');
+            setActiveTab('rejected');
+          }}
+          accessibilityRole="button"
+          accessibilityState={{ selected: activeTab === 'rejected' }}
+          accessibilityLabel={`Rejected expenses: $${rejectedTotal.toLocaleString()}`}
+        >
           <Text style={styles.summaryLabel}>Rejected</Text>
           <Text style={styles.summaryValue}>${rejectedTotal.toLocaleString()}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
         <View style={styles.tabRow}>
           {['all', 'pending', 'approved', 'rejected'].map(tab => (
-            <TouchableOpacity key={tab} style={[styles.tabChip, activeTab === tab && styles.tabChipActive]} onPress={() => setActiveTab(tab)}>
+            <TouchableOpacity
+              key={tab}
+              activeOpacity={0.7}
+              style={[styles.tabChip, activeTab === tab && styles.tabChipActive]}
+              onPress={() => {
+                hapticFeedback('light');
+                setActiveTab(tab);
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === tab }}
+              accessibilityLabel={`${tab} expenses`}
+            >
               <Text style={[styles.tabChipText, activeTab === tab && styles.tabChipTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {filtered.map((expense) => (
-          <TouchableOpacity key={expense.id} style={styles.expenseItem} onPress={() => navigation.navigate('ExpenseDetail', { expense })}>
-            <View style={[styles.expenseIcon, { backgroundColor: `${getIconColor(expense.category)}15` }]}>
-              <Ionicons name={getIconName(expense.category)} size={20} color={getIconColor(expense.category)} />
-            </View>
-            <View style={styles.expenseInfo}>
-              <Text style={styles.expenseTitle}>{expense.title}</Text>
-              <Text style={styles.expenseCategory}>{expense.category} • {expense.date}</Text>
-            </View>
-            <View style={styles.expenseRight}>
-              <Text style={styles.expenseAmount}>${expense.amount.toLocaleString()}</Text>
-              <Badge text={expense.status.charAt(0).toUpperCase() + expense.status.slice(1)} variant={getStatusVariant(expense.status)} size="small" />
-            </View>
-          </TouchableOpacity>
+        {filtered.map((expense, index) => (
+          <AnimatedListItem key={expense.id} index={index}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.expenseItem}
+              onPress={() => {
+                hapticFeedback('light');
+                navigation.navigate('ExpenseDetail', { expense });
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`${expense.title}, ${expense.category}, $${expense.amount}, ${expense.status}`}
+            >
+              <View style={[styles.expenseIcon, { backgroundColor: `${getIconColor(expense.category)}15` }]}>
+                <Ionicons name={getIconName(expense.category)} size={20} color={getIconColor(expense.category)} />
+              </View>
+              <View style={styles.expenseInfo}>
+                <Text style={styles.expenseTitle}>{expense.title}</Text>
+                <Text style={styles.expenseCategory}>{expense.category} • {expense.date}</Text>
+              </View>
+              <View style={styles.expenseRight}>
+                <Text style={styles.expenseAmount}>${expense.amount.toLocaleString()}</Text>
+                <Badge text={expense.status.charAt(0).toUpperCase() + expense.status.slice(1)} variant={getStatusVariant(expense.status)} size="small" />
+              </View>
+            </TouchableOpacity>
+          </AnimatedListItem>
         ))}
 
         {filtered.length === 0 && (
@@ -99,7 +170,12 @@ export const ExpenseOverviewScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Create Expense Request" icon={<Ionicons name="add" size={20} color={colors.textInverse} />} onPress={() => navigation.navigate('ExpenseOverview')} />
+        <Button
+          title="Create Expense Request"
+          icon={<Ionicons name="add" size={20} color={colors.textInverse} />}
+          onPress={handleCreateExpense}
+          accessibilityLabel="Create new expense request"
+        />
       </View>
     </View>
   );

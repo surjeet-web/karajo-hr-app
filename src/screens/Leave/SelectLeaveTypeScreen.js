@@ -5,14 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Button, ProgressBar } from '../../components';
+import { Button, ProgressBar, AnimatedListItem } from '../../components';
 import { Header } from '../../components';
+import { useFadeIn, useSlideIn, useStaggerList } from '../../utils/animations';
+import { hapticFeedback } from '../../utils/haptics';
 import { getState, subscribe } from '../../store';
 
 export const SelectLeaveTypeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [appState, setAppState] = useState(getState());
   const [selectedType, setSelectedType] = useState(null);
+  const fadeIn = useFadeIn(400);
+  const slideUp = useSlideIn('up', 20, 500, 100);
+  const staggerAnims = useStaggerList(appState.leave.balances.length, 80);
 
   useEffect(() => {
     const unsubscribe = subscribe(setAppState);
@@ -40,11 +45,16 @@ export const SelectLeaveTypeScreen = ({ navigation }) => {
         <Text style={styles.heading}>Select Leave Type</Text>
 
         <View style={styles.typesList}>
-          {balances.map((type) => (
-            <TouchableOpacity
+          {balances.map((type, i) => (
+            <AnimatedListItem
               key={type.type}
               style={[styles.typeItem, selectedType === type.type && styles.typeItemSelected]}
-              onPress={() => setSelectedType(type.type)}
+              animation={staggerAnims[i]}
+              onPress={() => { hapticFeedback('light'); setSelectedType(type.type); }}
+              accessible
+              accessibilityLabel={`${type.type} leave, ${type.remaining !== null ? type.remaining + ' days remaining' : 'Unlimited'}`}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedType === type.type }}
             >
               <View style={[styles.typeIcon, { backgroundColor: `${type.color}15` }]}>
                 <Ionicons name={getIconName(type.type)} size={24} color={getIconColor(type.type)} />
@@ -56,7 +66,7 @@ export const SelectLeaveTypeScreen = ({ navigation }) => {
               <View style={[styles.radio, selectedType === type.type && styles.radioSelected]}>
                 {selectedType === type.type && <View style={styles.radioInner} />}
               </View>
-            </TouchableOpacity>
+            </AnimatedListItem>
           ))}
         </View>
 
@@ -69,7 +79,7 @@ export const SelectLeaveTypeScreen = ({ navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Continue" onPress={() => selectedType && navigation.navigate('SelectDates', { leaveType: selectedType })} disabled={!selectedType} />
+        <Button title="Continue" onPress={() => { hapticFeedback('heavy'); selectedType && navigation.navigate('SelectDates', { leaveType: selectedType }); }} disabled={!selectedType} />
       </View>
     </View>
   );

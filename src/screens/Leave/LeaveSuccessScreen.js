@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,10 +6,15 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const LeaveSuccessScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { leaveType, startDate, endDate, days } = route.params || {};
+
+  useEffect(() => {
+    hapticFeedback('success');
+  }, []);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -65,8 +70,8 @@ export const LeaveSuccessScreen = ({ navigation, route }) => {
       </View>
 
       <View style={styles.footer}>
-        <Button title="Back to Leave" onPress={() => navigation.navigate('LeaveHome')} />
-        <Button title="View History" variant="outline" onPress={() => navigation.navigate('LeaveHistory')} style={styles.secondaryButton} />
+        <Button title="Back to Leave" onPress={() => { hapticFeedback('medium'); navigation.navigate('LeaveHome'); }} accessible accessibilityLabel="Go back to leave home" accessibilityRole="button" />
+        <Button title="View History" variant="outline" onPress={() => { hapticFeedback('medium'); navigation.navigate('LeaveHistory'); }} style={styles.secondaryButton} accessible accessibilityLabel="View leave history" accessibilityRole="button" />
       </View>
     </View>
   );

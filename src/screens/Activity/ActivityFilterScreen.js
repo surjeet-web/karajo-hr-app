@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,14 +6,44 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
 import { activityCategories, projects } from '../../data/mockData';
 
 export const ActivityFilterScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [selectedCategories, setSelectedCategories] = useState(['development']);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('completed');
+
+  const toggleCategory = (id) => {
+    setSelectedCategories(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllCategories = () => {
+    if (selectedCategories.length === activityCategories.length) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(activityCategories.map(c => c.id));
+    }
+  };
 
   const getIconName = (icon) => {
     const iconMap = { code: 'code-slash', users: 'people', clipboard: 'clipboard', 'pen-tool': 'create', search: 'search' };
     return iconMap[icon] || 'apps';
+  };
+
+  const getFilterCount = () => {
+    let count = 0;
+    if (selectedCategories.length > 0) count++;
+    if (selectedProject) count++;
+    if (selectedStatus !== 'all') count++;
+    return count;
+  };
+
+  const applyFilters = () => {
+    navigation.goBack();
   };
 
   return (
@@ -24,7 +54,7 @@ export const ActivityFilterScreen = ({ navigation }) => {
       
       <View style={styles.header}>
         <Text style={styles.title}>Filter Activities</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityLabel="Close filters">
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -33,15 +63,22 @@ export const ActivityFilterScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Category</Text>
-            <TouchableOpacity>
-              <Text style={styles.selectAllText}>Select All</Text>
+            <TouchableOpacity onPress={selectAllCategories} accessibilityLabel="Select all categories">
+              <Text style={styles.selectAllText}>
+                {selectedCategories.length === activityCategories.length ? 'Deselect All' : 'Select All'}
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.categoriesRow}>
             {activityCategories.map((cat) => (
-              <TouchableOpacity key={cat.id} style={[styles.categoryChip, cat.active && styles.activeCategoryChip]}>
-                <Ionicons name={getIconName(cat.icon)} size={14} color={cat.active ? colors.textInverse : colors.textSecondary} />
-                <Text style={[styles.categoryText, cat.active && styles.activeCategoryText]}>{cat.name}</Text>
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.categoryChip, selectedCategories.includes(cat.id) && styles.activeCategoryChip]}
+                onPress={() => { hapticFeedback('light'); toggleCategory(cat.id); }}
+                accessibilityLabel={`${cat.name} category${selectedCategories.includes(cat.id) ? ', selected' : ''}`}
+              >
+                <Ionicons name={getIconName(cat.icon)} size={14} color={selectedCategories.includes(cat.id) ? colors.textInverse : colors.textSecondary} />
+                <Text style={[styles.categoryText, selectedCategories.includes(cat.id) && styles.activeCategoryText]}>{cat.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -49,8 +86,10 @@ export const ActivityFilterScreen = ({ navigation }) => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Project or Client</Text>
-          <TouchableOpacity style={styles.dropdown}>
-            <Text style={styles.dropdownText}>Dirga Corp - Mobile App Redesign</Text>
+          <TouchableOpacity style={styles.dropdown} onPress={() => {}} accessibilityLabel="Select project">
+            <Text style={selectedProject ? styles.dropdownText : styles.dropdownPlaceholderText}>
+              {selectedProject ? selectedProject.name : 'Select a project...'}
+            </Text>
             <Ionicons name="chevron-down" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -58,18 +97,38 @@ export const ActivityFilterScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Status</Text>
           <View style={styles.statusRow}>
-            <TouchableOpacity style={styles.statusChip}>
-              <Text style={styles.statusText}>All</Text>
+            <TouchableOpacity
+              style={[styles.statusChip, selectedStatus === 'all' && styles.activeStatusChip]}
+              onPress={() => setSelectedStatus('all')}
+              accessibilityLabel="All status"
+            >
+              <Text style={[styles.statusText, selectedStatus === 'all' && styles.activeStatusText]}>All</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.statusChip, styles.activeStatusChip]}>
-              <Text style={[styles.statusText, styles.activeStatusText]}>Completed</Text>
+            <TouchableOpacity
+              style={[styles.statusChip, selectedStatus === 'completed' && styles.activeStatusChip]}
+              onPress={() => setSelectedStatus('completed')}
+              accessibilityLabel="Completed status"
+            >
+              <Text style={[styles.statusText, selectedStatus === 'completed' && styles.activeStatusText]}>Completed</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.statusChip, selectedStatus === 'pending' && styles.activeStatusChip]}
+              onPress={() => setSelectedStatus('pending')}
+              accessibilityLabel="Pending status"
+            >
+              <Text style={[styles.statusText, selectedStatus === 'pending' && styles.activeStatusText]}>Pending</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Apply Filters (3)" onPress={() => navigation.goBack()} style={styles.applyButton} />
+        <Button
+          title={`Apply Filters (${getFilterCount()})`}
+          onPress={applyFilters}
+          style={styles.applyButton}
+          accessibilityLabel={`Apply ${getFilterCount()} filters`}
+        />
       </View>
     </View>
   );
@@ -93,6 +152,7 @@ const styles = StyleSheet.create({
   activeCategoryText: { color: colors.textInverse, fontWeight: '600' },
   dropdown: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.lg, paddingHorizontal: spacing.md, height: 48 },
   dropdownText: { ...typography.body, color: colors.text },
+  dropdownPlaceholderText: { ...typography.body, color: colors.textTertiary },
   statusRow: { flexDirection: 'row', gap: spacing.sm },
   statusChip: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.lg },
   activeStatusChip: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.primary },

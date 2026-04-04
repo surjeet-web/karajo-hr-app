@@ -1,14 +1,48 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Button, Badge } from '../../components';
+import { hapticFeedback } from '../../utils/haptics';
+import { checkIn, attendanceService } from '../../store';
 
 export const AttendanceLocationScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [gpsStatus, setGpsStatus] = useState('searching');
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGpsStatus('verified');
+      setGpsAccuracy('5m');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCheckIn = () => {
+    hapticFeedback('heavy');
+    setIsCheckingIn(true);
+    checkIn('Karajo HQ - Tech Park');
+    setTimeout(() => {
+      hapticFeedback('success');
+      setIsCheckingIn(false);
+      navigation.navigate('FaceValidation');
+    }, 500);
+  };
+
+  const timeStr = currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const shiftStart = '09:00 AM';
+  const isOnTime = currentTime.getHours() < 9 || (currentTime.getHours() === 9 && currentTime.getMinutes() <= 15);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -43,11 +77,19 @@ export const AttendanceLocationScreen = ({ navigation }) => {
 
         <View style={styles.verifiedRow}>
           <View style={styles.verifiedIcon}>
-            <Ionicons name="checkmark" size={20} color={colors.success} />
+            {gpsStatus === 'searching' ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Ionicons name="checkmark" size={20} color={colors.success} />
+            )}
           </View>
           <View>
-            <Text style={styles.verifiedTitle}>Location Verified</Text>
-            <Text style={styles.verifiedSubtitle}>You are within the office radius</Text>
+            <Text style={styles.verifiedTitle}>
+              {gpsStatus === 'searching' ? 'Locating...' : 'Location Verified'}
+            </Text>
+            <Text style={styles.verifiedSubtitle}>
+              {gpsStatus === 'searching' ? 'Finding your position...' : 'You are within the office radius'}
+            </Text>
           </View>
         </View>
 
@@ -64,19 +106,25 @@ export const AttendanceLocationScreen = ({ navigation }) => {
         <View style={styles.timeRow}>
           <Ionicons name="time-outline" size={20} color={colors.textTertiary} />
           <View style={styles.timeInfo}>
-            <Text style={styles.timeValue}>08:58 AM</Text>
-            <Text style={styles.timeStatus}>On Time • Shift starts at 09:00 AM</Text>
+            <Text style={styles.timeValue}>{timeStr}</Text>
+            <Text style={styles.timeStatus}>
+              {isOnTime ? 'On Time' : 'Late'} • Shift starts at {shiftStart}
+            </Text>
           </View>
         </View>
 
         <Button
           title="Check In Now"
-          onPress={() => navigation.navigate('FaceValidation')}
+          onPress={handleCheckIn}
           style={styles.checkInButton}
-          icon={<Ionicons name="arrow-forward" size={18} color={colors.textInverse} />}
+          icon={isCheckingIn ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Ionicons name="arrow-forward" size={18} color={colors.textInverse} />}
+          disabled={gpsStatus !== 'verified' || isCheckingIn}
+          accessibilityLabel="Check in to attendance"
         />
 
-        <Text style={styles.gpsText}>GPS accuracy: High (5m)</Text>
+        <Text style={styles.gpsText}>
+          GPS accuracy: {gpsStatus === 'searching' ? 'Searching...' : `High (${gpsAccuracy})`}
+        </Text>
       </View>
     </View>
   );
