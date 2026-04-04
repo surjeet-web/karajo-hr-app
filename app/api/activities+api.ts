@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -13,12 +13,12 @@ export async function GET(request: Request) {
     const date = params.get('date');
 
     if (date) {
-      const items = database.activities.items.filter((a: any) => a.date === date);
+      const items = database.activities.items.filter((a: { date: string }) => a.date === date);
       return jsonResponse({ items, date });
     }
 
     return jsonResponse({ items: database.activities.items });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch activities', 500);
   }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     await saveDB(database);
     return jsonResponse({ activity: newActivity }, 201);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create activity', 500);
   }

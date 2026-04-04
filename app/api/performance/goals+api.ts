@@ -1,6 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { parseBody } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -13,9 +12,9 @@ export async function GET(request: Request) {
     const params = getQueryParams(request);
     const category = params.get('category');
     let goals = database.performance.goals;
-    if (category) goals = goals.filter((g: any) => g.category === category);
+    if (category) goals = goals.filter((g: { category: string }) => g.category === category);
     return jsonResponse({ goals });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch goals', 500);
   }
@@ -39,7 +38,7 @@ export async function POST(request: Request) {
     database.performance.goals.unshift(newGoal);
     await saveDB(database);
     return jsonResponse({ goal: newGoal }, 201);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create goal', 500);
   }

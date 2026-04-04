@@ -1,15 +1,15 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
-import { getDB } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../../utils/auth';
+import { getDB } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
 }
 
-export async function GET(request: Request, { id }: { id: string }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     await requireAuth(request);
     const database = await getDB();
-    const expense = database.expenses.requests.find((e: any) => e.id === parseInt(id));
+    const expense = database.expenses.requests.find((e: { id: number }) => e.id === parseInt(params.id));
 
     if (!expense) return errorResponse('Expense not found', 404);
 
@@ -21,7 +21,7 @@ export async function GET(request: Request, { id }: { id: string }) {
     ];
 
     return jsonResponse({ expense, timeline });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch expense', 500);
   }

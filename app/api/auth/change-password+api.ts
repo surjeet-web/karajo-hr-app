@@ -1,6 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
-import { parseBody, validateField } from '../../utils/auth';
-import { getDB, saveDB } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, parseBody } from '../../../utils/auth';
+import { getDB, saveDB } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -17,7 +16,7 @@ export async function POST(request: Request) {
     if (newPassword.length < 6) return errorResponse('Password must be at least 6 characters', 400);
 
     const database = await getDB();
-    const user = database.users.find((u: any) => u.id === userId);
+    const user = database.users.find((u: { id: string }) => u.id === userId);
     if (!user) return errorResponse('User not found', 404);
     if (user.password !== currentPassword) return errorResponse('Current password is incorrect', 401);
 
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
     await saveDB(database);
 
     return jsonResponse({ success: true, message: 'Password updated successfully' });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to change password', 500);
   }

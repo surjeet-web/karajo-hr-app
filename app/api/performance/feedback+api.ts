@@ -1,6 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { parseBody } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -13,9 +12,9 @@ export async function GET(request: Request) {
     const params = getQueryParams(request);
     const type = params.get('type');
     let feedback = database.performance.feedback;
-    if (type) feedback = feedback.filter((f: any) => f.type === type);
+    if (type) feedback = feedback.filter((f: { type: string }) => f.type === type);
     return jsonResponse({ feedback });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch feedback', 500);
   }
@@ -39,7 +38,7 @@ export async function POST(request: Request) {
     database.performance.feedback.unshift(newFeedback);
     await saveDB(database);
     return jsonResponse({ feedback: newFeedback }, 201);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to submit feedback', 500);
   }

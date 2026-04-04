@@ -1,6 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
-import { parseBody, validateField } from '../../utils/auth';
-import { getDB, saveDB } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, parseBody, validateField } from '../../../utils/auth';
+import { getDB, saveDB } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -11,7 +10,7 @@ export async function GET(request: Request) {
     const { user } = await requireAuth(request);
     const { password, ...userWithoutPassword } = user;
     return jsonResponse({ user: userWithoutPassword });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch profile', 500);
   }
@@ -23,7 +22,7 @@ export async function PUT(request: Request) {
     const updates = await parseBody(request);
 
     const database = await getDB();
-    const userIndex = database.users.findIndex((u: any) => u.id === userId);
+    const userIndex = database.users.findIndex((u: { id: string }) => u.id === userId);
 
     if (userIndex === -1) {
       return errorResponse('User not found', 404);
@@ -42,7 +41,7 @@ export async function PUT(request: Request) {
     const { password, ...updatedUser } = database.users[userIndex];
 
     return jsonResponse({ user: updatedUser });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to update profile', 500);
   }

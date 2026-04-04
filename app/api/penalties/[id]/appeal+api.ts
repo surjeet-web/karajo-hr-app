@@ -1,12 +1,11 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
-import { parseBody, validateField } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, parseBody } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
 }
 
-export async function POST(request: Request, { id }: { id: string }) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
     await requireAuth(request);
     const body = await parseBody(request);
@@ -16,14 +15,14 @@ export async function POST(request: Request, { id }: { id: string }) {
     if (!explanation) return errorResponse('Explanation is required', 400);
 
     const database = await getDB();
-    const penalty = database.penalties.records.find((p: any) => p.id === parseInt(id));
+    const penalty = database.penalties.records.find((p: { id: number }) => p.id === parseInt(params.id));
 
     if (!penalty) return errorResponse('Penalty not found', 404);
     if (penalty.status === 'resolved') return errorResponse('Cannot appeal a resolved penalty', 400);
 
     const appeal = {
       id: generateId(),
-      penaltyId: parseInt(id),
+      penaltyId: parseInt(params.id),
       penaltyType: penalty.type,
       type,
       explanation,
@@ -45,7 +44,7 @@ export async function POST(request: Request, { id }: { id: string }) {
 
     await saveDB(database);
     return jsonResponse({ appeal }, 201);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to submit appeal', 500);
   }

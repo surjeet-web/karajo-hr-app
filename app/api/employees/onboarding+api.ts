@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
-import { getDB, saveDB } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../../utils/auth';
+import { getDB, saveDB } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -21,18 +21,18 @@ export async function GET(request: Request) {
         { id: 4, title: 'Training', items: [{ task: 'Security training', done: false }, { task: 'Compliance training', done: false }, { task: 'Product knowledge session', done: false }] },
       ],
     });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch onboarding data', 500);
   }
 }
 
-export async function PUT(request: Request, { id }: { id: string }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     await requireAuth(request);
     const body = await request.json();
-    return jsonResponse({ success: true, taskId: id, done: body.done });
-  } catch (error: any) {
+    return jsonResponse({ success: true, taskId: params.id, done: body.done });
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to update task', 500);
   }

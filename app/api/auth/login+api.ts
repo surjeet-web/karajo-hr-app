@@ -1,5 +1,5 @@
-import { getDB, saveDB, generateToken } from '../../utils/db';
-import { parseBody, jsonResponse, errorResponse, validateField, corsHeaders } from '../../utils/auth';
+import { getDB, saveDB, generateToken } from '../../../utils/db';
+import { parseBody, jsonResponse, errorResponse, validateField, corsHeaders } from '../../../utils/auth';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (passwordError) return errorResponse(passwordError, 400);
 
     const database = await getDB();
-    const user = database.users.find((u: any) => u.email === email);
+    const user = database.users.find((u: { email: string }) => u.email === email);
 
     if (!user || user.password !== password) {
       return errorResponse('Invalid email or password', 401);
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       refreshToken,
       user: userWithoutPassword,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Login error:', error);
     return errorResponse('Login failed', 500);
   }

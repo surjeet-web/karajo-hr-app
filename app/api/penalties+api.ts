@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -14,14 +14,14 @@ export async function GET(request: Request) {
 
     let records = database.penalties.records;
     if (status) {
-      records = records.filter((r: any) => r.status === status);
+      records = records.filter((r: { status: string }) => r.status === status);
     }
 
     return jsonResponse({
       records,
       appeals: database.penalties.appeals,
     });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch penalties', 500);
   }
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     await saveDB(database);
     return jsonResponse({ penalty: newPenalty }, 201);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create penalty', 500);
   }

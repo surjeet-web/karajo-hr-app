@@ -1,5 +1,5 @@
-import { getDB, saveDB } from '../../utils/db';
-import { parseBody, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
+import { getDB, saveDB } from '../../../utils/db';
+import { parseBody, jsonResponse, errorResponse, corsHeaders } from '../../../utils/auth';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
     const database = await getDB();
     const tokenEntry = database.tokens.find(
-      (t: any) => t.refreshToken === refreshToken && t.refreshExpiresAt > Date.now()
+      (t: { refreshToken: string; refreshExpiresAt: number }) => t.refreshToken === refreshToken && t.refreshExpiresAt > Date.now()
     );
 
     if (!tokenEntry) {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     await saveDB(database);
 
     return jsonResponse({ token: newToken, refreshToken: newRefreshToken });
-  } catch (error: any) {
+  } catch (error) {
     return errorResponse('Token refresh failed', 500);
   }
 }

@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -14,11 +14,11 @@ export async function GET(request: Request) {
 
     let requests = database.expenses.requests;
     if (status) {
-      requests = requests.filter((r: any) => r.status === status);
+      requests = requests.filter((r: { status: string }) => r.status === status);
     }
 
     return jsonResponse({ requests });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch expenses', 500);
   }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     await saveDB(database);
     return jsonResponse({ expense: newExpense }, 201);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create expense', 500);
   }

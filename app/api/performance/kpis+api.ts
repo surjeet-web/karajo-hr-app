@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { getDB } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../../utils/auth';
+import { getDB } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -12,9 +12,9 @@ export async function GET(request: Request) {
     const params = getQueryParams(request);
     const category = params.get('category');
     let kpis = database.performance.kpis;
-    if (category) kpis = kpis.filter((k: any) => k.category === category);
+    if (category) kpis = kpis.filter((k: { category: string }) => k.category === category);
     return jsonResponse({ kpis });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch KPIs', 500);
   }

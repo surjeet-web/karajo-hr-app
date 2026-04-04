@@ -1,18 +1,17 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
-import { parseBody } from '../../utils/auth';
-import { getDB, saveDB } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, parseBody } from '../../../utils/auth';
+import { getDB, saveDB } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
 }
 
-export async function PUT(request: Request, { id }: { id: string }) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     await requireAuth(request);
     const body = await parseBody(request);
 
     const database = await getDB();
-    const index = database.performance.goals.findIndex((g: any) => g.id === parseInt(id));
+    const index = database.performance.goals.findIndex((g: { id: number }) => g.id === parseInt(params.id));
 
     if (index === -1) return errorResponse('Goal not found', 404);
 
@@ -24,7 +23,7 @@ export async function PUT(request: Request, { id }: { id: string }) {
 
     await saveDB(database);
     return jsonResponse({ goal: database.performance.goals[index] });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to update goal', 500);
   }

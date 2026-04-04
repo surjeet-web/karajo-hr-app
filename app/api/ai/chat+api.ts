@@ -1,6 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams } from '../../utils/auth';
-import { parseBody } from '../../utils/auth';
-import { getDB, saveDB, generateId } from '../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
+import { getDB, saveDB, generateId } from '../../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -23,11 +22,11 @@ export async function GET(request: Request) {
     ];
 
     if (category) {
-      actions = actions.filter((a: any) => a.category === category);
+      actions = actions.filter((a: { category: string }) => a.category === category);
     }
 
     return jsonResponse({ actions });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to fetch quick actions', 500);
   }
@@ -57,7 +56,7 @@ export async function POST(request: Request) {
       response,
       suggestions: ['Leave Request Policy', 'Apply for Leave', 'View History'],
     });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to process AI request', 500);
   }
