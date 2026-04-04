@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticFeedback } from '../../utils/haptics';
 
 import { useAuth } from '../../context/AuthContext';
 import { Input, Button, Card } from '../../components';
@@ -72,33 +72,33 @@ export const LoginScreen: React.FC = () => {
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       setError('Please enter both email and password');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      hapticFeedback('error');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      hapticFeedback('error');
       return;
     }
 
     setError(null);
     setIsLoading(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticFeedback('medium');
 
     try {
       await login(email.trim(), password, selectedRole);
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      hapticFeedback('error');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleForgotPassword = (): void => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticFeedback('light');
     Alert.alert(
       'Forgot Password',
       'Password reset functionality will be available soon.',
@@ -109,7 +109,7 @@ export const LoginScreen: React.FC = () => {
   const selectRole = (roleValue) => {
     setSelectedRole(roleValue);
     setShowRoleDropdown(false);
-    Haptics.selectionAsync();
+    hapticFeedback('selection');
   };
 
   const selectedRoleLabel = ROLE_OPTIONS.find((r) => r.value === selectedRole)?.label || 'Employee';
@@ -186,7 +186,7 @@ export const LoginScreen: React.FC = () => {
                     style={styles.roleButton}
                     onPress={() => {
                       setShowRoleDropdown(!showRoleDropdown);
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      hapticFeedback('light');
                     }}
                     accessibilityLabel="Select role dropdown"
                     accessibilityRole="button"
