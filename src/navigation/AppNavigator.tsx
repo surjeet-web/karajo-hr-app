@@ -10,6 +10,8 @@ import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { LoadingScreen } from '../components/CommonStates';
 import type { RoleId } from '../utils/rbac';
+import { ROLE_SCREEN_ACCESS, hasScreenAccess, getTabComponentForRole } from '../config/roleAccess';
+import { ALL_SCREENS, getRoleScreens } from '../components/RoleBasedScreens';
 import { AnimatedTabButton } from '../components/AnimatedTabButton';
 
 // Employee Screens
@@ -262,33 +264,19 @@ export type EmployeeTabParamList = {
   Home: undefined;
   Activity: undefined;
   Center: undefined;
+  Performance: undefined;
   Finance: undefined;
   Notification: undefined;
 };
 
 export type HRTabParamList = {
-  'HR Home': undefined;
-  Approvals: undefined;
-  Employees: undefined;
-  Attendance: undefined;
-  Reports: undefined;
-  'HR Settings': undefined;
-};
-
-export type FinanceMgrTabParamList = {
-  'Finance Home': undefined;
-  Employees: undefined;
-  Payroll: undefined;
-  Expenses: undefined;
-  Reports: undefined;
-};
-
-export type ManagerTabParamList = {
-  'My Dashboard': undefined;
-  'My Team': undefined;
-  'Team Approvals': undefined;
-  Planning: undefined;
-  'Team Reports': undefined;
+  Home: undefined;
+  Activity: undefined;
+  Center: undefined;
+  Performance: undefined;
+  HR: undefined;
+  Finance: undefined;
+  Notification: undefined;
 };
 
 export type CEOTabParamList = {
@@ -342,9 +330,76 @@ const FinanceStack = () => (
   </Stack.Navigator>
 );
 
+const PerformanceStack = () => (
+  <Stack.Navigator<PerformanceStackParamList> screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="PerformanceHome" component={PerformanceDashboardScreen} />
+    <Stack.Screen name="MyKPIs" component={KPITrackingScreen} />
+    <Stack.Screen name="MyReviews" component={PerformanceReviewScreen} />
+    <Stack.Screen name="MyGoals" component={GoalSettingScreen} />
+    <Stack.Screen name="MyFeedback" component={Feedback360Screen} />
+    <Stack.Screen name="MyTeamLeader" component={EmployeeDirectoryScreen} />
+    <Stack.Screen name="TeamMembers" component={EmployeeDetailScreen} />
+  </Stack.Navigator>
+);
+
 const NotificationStack = () => (
   <Stack.Navigator<NotificationStackParamList> screenOptions={{ headerShown: false }}>
     <Stack.Screen name="NotificationsMain" component={NotificationsScreen} />
+  </Stack.Navigator>
+);
+
+// ==================== ROLE-SPECIFIC STACKS ====================
+
+// HR Management Stack (for HR users)
+const HRManagementStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="HRHome" component={HRDashboardScreen} />
+    <Stack.Screen name="HRApprovals" component={HRApprovalCenterScreen} />
+    <Stack.Screen name="HREmployees" component={HREmployeeManagementScreen} />
+    <Stack.Screen name="HRAttendance" component={HRAttendanceManagementScreen} />
+    <Stack.Screen name="HRReports" component={HRReportsScreen} />
+    <Stack.Screen name="HRSettings" component={HRSettingsScreen} />
+    <Stack.Screen name="HRAnalytics" component={HRAnalyticsScreen} />
+    <Stack.Screen name="HRLeaveManagement" component={HRLeaveManagementScreen} />
+    <Stack.Screen name="HROnboardingManagement" component={HROnboardingManagementScreen} />
+    <Stack.Screen name="HROffboarding" component={HROffboardingScreen} />
+    <Stack.Screen name="HRPolicyManagement" component={HRPolicyManagementScreen} />
+    <Stack.Screen name="HRCompliance" component={HRComplianceScreen} />
+    <Stack.Screen name="HRBulkActions" component={HRBulkActionsScreen} />
+    <Stack.Screen name="HREmployeeProfile" component={HREmployeeProfileScreen} />
+    <Stack.Screen name="HRApprovalDetail" component={HRApprovalDetailScreen} />
+    <Stack.Screen name="HRReportDetail" component={HRReportDetailScreen} />
+  </Stack.Navigator>
+);
+
+// Finance Management Stack (for Finance users)
+const FinanceManagementStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="FinanceHome" component={FinanceDashboardScreen} />
+    <Stack.Screen name="FinanceEmployees" component={FinanceEmployeeScreen} />
+    <Stack.Screen name="Payroll" component={PayrollManagementScreen} />
+    <Stack.Screen name="FinanceExpenses" component={FinanceExpenseManagementScreen} />
+    <Stack.Screen name="FinanceReports" component={FinanceReportsScreen} />
+    <Stack.Screen name="FinanceBudget" component={FinanceBudgetScreen} />
+    <Stack.Screen name="FinanceTax" component={FinanceTaxScreen} />
+    <Stack.Screen name="FinanceAudit" component={FinanceAuditScreen} />
+    <Stack.Screen name="PayrollDetail" component={PayrollDetailScreen} />
+    <Stack.Screen name="PayrollHistory" component={PayrollHistoryScreen} />
+    <Stack.Screen name="FinanceReportDetail" component={FinanceReportDetailScreen} />
+  </Stack.Navigator>
+);
+
+// Team Management Stack (for Managers/TLs)
+const TeamManagementStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="TeamDashboard" component={ManagerDashboardScreen} />
+    <Stack.Screen name="MyTeam" component={MyTeamScreen} />
+    <Stack.Screen name="TeamApprovals" component={ManagerApprovalScreen} />
+    <Stack.Screen name="TeamPlanning" component={TeamPlanningScreen} />
+    <Stack.Screen name="TeamReports" component={TeamReportsScreen} />
+    <Stack.Screen name="TeamAttendance" component={TeamAttendanceScreen} />
+    <Stack.Screen name="TeamPerformance" component={TeamPerformanceScreen} />
+    <Stack.Screen name="TeamGoals" component={TeamGoalsScreen} />
   </Stack.Navigator>
 );
 
@@ -371,6 +426,7 @@ const EmployeeTabs = () => (
         if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
         else if (route.name === 'Activity') iconName = focused ? 'time' : 'time-outline';
         else if (route.name === 'Center') return null;
+        else if (route.name === 'Performance') iconName = focused ? 'trending-up' : 'trending-up-outline';
         else if (route.name === 'Finance') iconName = focused ? 'wallet' : 'wallet-outline';
         else if (route.name === 'Notification') iconName = focused ? 'notifications' : 'notifications-outline';
         else return 'home-outline' as keyof typeof Ionicons.glyphMap;
@@ -385,12 +441,14 @@ const EmployeeTabs = () => (
     <Tab.Screen name="Home" component={HomeStack} />
     <Tab.Screen name="Activity" component={ActivityStack} />
     <Tab.Screen name="Center" component={ShortcutsScreen} options={{ tabBarButton: (props) => <CenterButton {...props} /> }} />
+    <Tab.Screen name="Performance" component={PerformanceStack} />
     <Tab.Screen name="Finance" component={FinanceStack} />
     <Tab.Screen name="Notification" component={NotificationStack} />
   </Tab.Navigator>
 );
 
 // ==================== HR MANAGER TABS ====================
+// HR users are employees first + HR management features
 
 const HRTabs = () => (
   <Tab.Navigator<HRTabParamList>
@@ -398,15 +456,17 @@ const HRTabs = () => (
       headerShown: false,
       tabBarIcon: ({ focused, color, size }) => {
         const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-          'HR Home': 'home',
-          'Approvals': 'checkmark-circle',
-          'Employees': 'people',
-          'Attendance': 'calendar',
-          'Reports': 'bar-chart',
-          'HR Settings': 'settings',
+          'Home': 'home',
+          'Activity': 'time',
+          'Center': 'briefcase',
+          'Performance': 'trending-up',
+          'HR': 'people',
+          'Finance': 'wallet',
+          'Notification': 'notifications',
         };
         const name = route.name;
         const iconName = icons[name];
+        if (name === 'Center') return null;
         return <Ionicons name={focused ? iconName : `${iconName}-outline` as keyof typeof Ionicons.glyphMap} size={size} color={color} />;
       },
       tabBarActiveTintColor: colors.primary,
@@ -415,74 +475,15 @@ const HRTabs = () => (
       tabBarLabelStyle: styles.tabLabel,
     })}
   >
-    <Tab.Screen name="HR Home" component={HRDashboardScreen} />
-    <Tab.Screen name="Approvals" component={HRApprovalCenterScreen} />
-    <Tab.Screen name="Employees" component={HREmployeeManagementScreen} />
-    <Tab.Screen name="Attendance" component={HRAttendanceManagementScreen} />
-    <Tab.Screen name="Reports" component={HRReportsScreen} />
-    <Tab.Screen name="HR Settings" component={HRSettingsScreen} />
-  </Tab.Navigator>
-);
-
-// ==================== FINANCE MANAGER TABS ====================
-
-const FinanceTabs = () => (
-  <Tab.Navigator<FinanceMgrTabParamList>
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarIcon: ({ focused, color, size }) => {
-        const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-          'Finance Home': 'wallet',
-          'Employees': 'people',
-          'Payroll': 'card',
-          'Expenses': 'receipt',
-          'Reports': 'bar-chart',
-        };
-        const iconName = icons[route.name];
-        return <Ionicons name={focused ? iconName : `${iconName}-outline` as keyof typeof Ionicons.glyphMap} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textTertiary,
-      tabBarStyle: styles.tabBar,
-      tabBarLabelStyle: styles.tabLabel,
-    })}
-  >
-    <Tab.Screen name="Finance Home" component={FinanceDashboardScreen} />
-    <Tab.Screen name="Employees" component={FinanceEmployeeScreen} />
-    <Tab.Screen name="Payroll" component={PayrollManagementScreen} />
-    <Tab.Screen name="Expenses" component={FinanceExpenseManagementScreen} />
-    <Tab.Screen name="Reports" component={FinanceReportsScreen} />
-  </Tab.Navigator>
-);
-
-// ==================== DEPARTMENT MANAGER TABS ====================
-
-const ManagerTabs = () => (
-  <Tab.Navigator<ManagerTabParamList>
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarIcon: ({ focused, color, size }) => {
-        const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-          'My Dashboard': 'home',
-          'My Team': 'people',
-          'Team Approvals': 'checkmark-circle',
-          'Planning': 'calendar',
-          'Team Reports': 'bar-chart',
-        };
-        const iconName = icons[route.name];
-        return <Ionicons name={focused ? iconName : `${iconName}-outline` as keyof typeof Ionicons.glyphMap} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textTertiary,
-      tabBarStyle: styles.tabBar,
-      tabBarLabelStyle: styles.tabLabel,
-    })}
-  >
-    <Tab.Screen name="My Dashboard" component={ManagerDashboardScreen} />
-    <Tab.Screen name="My Team" component={MyTeamScreen} />
-    <Tab.Screen name="Team Approvals" component={ManagerApprovalScreen} />
-    <Tab.Screen name="Planning" component={TeamPlanningScreen} />
-    <Tab.Screen name="Team Reports" component={TeamReportsScreen} />
+    {/* Employee screens - every HR user is an employee first */}
+    <Tab.Screen name="Home" component={HomeStack} />
+    <Tab.Screen name="Activity" component={ActivityStack} />
+    <Tab.Screen name="Center" component={ShortcutsScreen} options={{ tabBarButton: (props) => <CenterButton {...props} /> }} />
+    <Tab.Screen name="Performance" component={PerformanceStack} />
+    {/* HR-specific tab */}
+    <Tab.Screen name="HR" component={HRManagementStack} />
+    <Tab.Screen name="Finance" component={FinanceStack} />
+    <Tab.Screen name="Notification" component={NotificationStack} />
   </Tab.Navigator>
 );
 
@@ -569,89 +570,20 @@ export const AppNavigator: React.FC = () => {
             <>
               <Stack.Screen name="MainTabs" component={RoleNavigator} options={{ animation: 'fade', animationDuration: 200, gestureEnabled: false }} />
 
-              {/* Employee-only screens (accessible from any role via shortcuts) */}
-              <Stack.Screen name="AIChat" component={AIChatScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="AIChatExpanded" component={AIChatExpandedScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="AIChatConversation" component={AIChatConversationScreen} />
-              <Stack.Screen name="DocumentView" component={DocumentViewScreen} />
-              <Stack.Screen name="AttendanceLocation" component={AttendanceLocationScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="FaceValidation" component={FaceValidationScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="QRValidation" component={QRValidationScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="AttendanceSuccess" component={AttendanceSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryScreen} />
-              <Stack.Screen name="AttendanceFilter" component={AttendanceFilterScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="MonthlySummary" component={MonthlySummaryScreen} />
-              <Stack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} />
-              <Stack.Screen name="AttendanceCalendar" component={AttendanceCalendarScreen} />
-              <Stack.Screen name="CorrectionReason" component={CorrectionReasonScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="CorrectionForm" component={CorrectionFormScreen} />
-              <Stack.Screen name="CorrectionSummary" component={CorrectionSummaryScreen} />
-              <Stack.Screen name="CorrectionSubmitted" component={CorrectionSubmittedScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="LeaveHome" component={LeaveHomeScreen} />
-              <Stack.Screen name="LeaveHistory" component={LeaveHistoryScreen} />
-              <Stack.Screen name="SelectLeaveType" component={SelectLeaveTypeScreen} />
-              <Stack.Screen name="SelectDates" component={SelectDatesScreen} />
-              <Stack.Screen name="SelectDelegate" component={SelectDelegateScreen} />
-              <Stack.Screen name="UploadDocument" component={UploadDocumentScreen} />
-              <Stack.Screen name="LeaveReview" component={LeaveReviewScreen} />
-              <Stack.Screen name="LeaveSuccess" component={LeaveSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="PermissionHome" component={PermissionHomeScreen} />
-              <Stack.Screen name="PermissionRequest" component={PermissionRequestScreen} />
-              <Stack.Screen name="PermissionReview" component={PermissionReviewScreen} />
-              <Stack.Screen name="PermissionSuccess" component={PermissionSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="OvertimeHome" component={OvertimeHomeScreen} />
-              <Stack.Screen name="OvertimeRequest" component={OvertimeRequestScreen} />
-              <Stack.Screen name="OvertimeReview" component={OvertimeReviewScreen} />
-              <Stack.Screen name="OvertimeSuccess" component={OvertimeSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="Profile" component={ProfileScreen} />
-              <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
-              <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
-              <Stack.Screen name="EmploymentInfo" component={EmploymentInfoScreen} />
-              <Stack.Screen name="PenaltyHome" component={PenaltyHomeScreen} />
-              <Stack.Screen name="PenaltyDetail" component={PenaltyDetailScreen} />
-              <Stack.Screen name="PenaltyAppeal" component={PenaltyAppealScreen} />
-              <Stack.Screen name="PenaltyReview" component={PenaltyReviewScreen} />
-              <Stack.Screen name="PenaltySuccess" component={PenaltySuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="EmployeeDirectory" component={EmployeeDirectoryScreen} />
-              <Stack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} />
-              <Stack.Screen name="OrgChart" component={OrgChartScreen} />
-              <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="Offboarding" component={OffboardingScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
-              <Stack.Screen name="PerformanceDashboard" component={PerformanceDashboardScreen} />
-              <Stack.Screen name="KPITracking" component={KPITrackingScreen} />
-              <Stack.Screen name="PerformanceReview" component={PerformanceReviewScreen} />
-              <Stack.Screen name="GoalSetting" component={GoalSettingScreen} />
-              <Stack.Screen name="Feedback360" component={Feedback360Screen} />
-              
-              {/* HR Management Screens */}
-              <Stack.Screen name="HREmployeeProfile" component={HREmployeeProfileScreen} />
-              <Stack.Screen name="HRApprovalDetail" component={HRApprovalDetailScreen} />
-              <Stack.Screen name="HRReportDetail" component={HRReportDetailScreen} />
-              <Stack.Screen name="HRAnalytics" component={HRAnalyticsScreen} />
-              <Stack.Screen name="HRLeaveManagement" component={HRLeaveManagementScreen} />
-              <Stack.Screen name="HROnboardingManagement" component={HROnboardingManagementScreen} />
-              <Stack.Screen name="HROffboarding" component={HROffboardingScreen} />
-              <Stack.Screen name="HRPolicyManagement" component={HRPolicyManagementScreen} />
-              <Stack.Screen name="HRCompliance" component={HRComplianceScreen} />
-              <Stack.Screen name="HRBulkActions" component={HRBulkActionsScreen} />
-              
-              {/* Finance Management Screens */}
-              <Stack.Screen name="FinanceEmployee" component={FinanceEmployeeScreen} />
-              <Stack.Screen name="FinanceBudget" component={FinanceBudgetScreen} />
-              <Stack.Screen name="FinanceTax" component={FinanceTaxScreen} />
-              <Stack.Screen name="FinanceAudit" component={FinanceAuditScreen} />
-              <Stack.Screen name="PayrollDetail" component={PayrollDetailScreen} />
-              <Stack.Screen name="PayrollHistory" component={PayrollHistoryScreen} />
-              <Stack.Screen name="FinanceReportDetail" component={FinanceReportDetailScreen} />
-              
-              {/* Manager Management Screens */}
-              <Stack.Screen name="TeamAttendance" component={TeamAttendanceScreen} />
-              <Stack.Screen name="TeamPerformance" component={TeamPerformanceScreen} />
-              <Stack.Screen name="TeamGoals" component={TeamGoalsScreen} />
-              
-              {/* CEO Management Screens */}
-              <Stack.Screen name="DepartmentDetail" component={DepartmentDetailScreen} />
-              <Stack.Screen name="WorkforcePlanning" component={WorkforcePlanningScreen} />
+              {/* Role-based screens - only show screens the user's role has access to */}
+              {getRoleScreens(role as RoleId).map((screen) => (
+                <Stack.Screen
+                  key={screen.name}
+                  name={screen.name as keyof RootStackParamList}
+                  component={screen.component}
+                  options={{
+                    presentation: screen.isModal ? 'modal' : undefined,
+                    animation: screen.isModal ? 'slide_from_bottom' : screen.isFade ? 'fade' : undefined,
+                    animationDuration: screen.isFade ? 300 : undefined,
+                    gestureEnabled: !screen.isModal,
+                  }}
+                />
+              ))}
             </>
           )}
         </Stack.Navigator>
