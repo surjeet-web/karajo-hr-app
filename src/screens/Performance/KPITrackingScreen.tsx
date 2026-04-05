@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Header, Card, Badge, Button, ProgressBar, AnimatedListItem } from '../../components';
+import { Header, Card, Badge, Button, ProgressBar, AnimatedListItem, PulsingIcon } from '../../components';
 import { performanceData } from '../../data/mockData';
 import { useFadeIn, useSlideIn, useScaleIn } from '../../utils/animations';
 import { hapticFeedback } from '../../utils/haptics';
@@ -75,50 +75,56 @@ export const KPITrackingScreen: React.FC<any> = ({ navigation }) => {
         }
       >
         <Animated.View style={[styles.summaryBanner, { opacity: bannerSlide.opacity, transform: [{ translateY: bannerSlide.offset }] }]}>
-          <PulsingIcon name={<Ionicons name="speedometer" size={24} color={colors.primary} />} delay={200} />
+          <PulsingIcon>
+            <Ionicons name="speedometer" size={24} color={colors.primary} />
+          </PulsingIcon>
           <View style={styles.summaryText}>
             <Text style={styles.summaryTitle}>Average KPI Score: {avgScore}%</Text>
             <Text style={styles.summarySubtitle}>{onTrackCount} of {performanceData.kpis.length} KPIs are on track or exceeding targets</Text>
           </View>
         </Animated.View>
 
-        {filteredKpis.map((kpi, i) => {
-          const statusConfig = getStatusConfig(kpi.status);
-          const slideIn = useSlideIn('up', 350, 300 + i * 100);
-          return (
-            <Animated.View key={kpi.id} style={[{ opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }], marginBottom: spacing.md }]}>
-              <Card style={styles.kpiCard} padding="md">
-                <View style={styles.kpiHeader}>
-                  <View style={styles.kpiTitleRow}>
-                    <Text style={styles.kpiName}>{kpi.name}</Text>
-                    <Badge text={kpi.status.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())} variant={statusConfig.variant} size="small" />
-                  </View>
-                  <Text style={styles.kpiCategory}>{kpi.category}</Text>
-                </View>
-
-                <View style={styles.kpiMetrics}>
-                  <View style={styles.kpiMetric}>
-                    <Text style={styles.kpiMetricLabel}>Current</Text>
-                    <Text style={styles.kpiMetricValue}>{kpi.current}</Text>
-                  </View>
-                  <View style={styles.kpiMetric}>
-                    <Text style={styles.kpiMetricLabel}>Target</Text>
-                    <Text style={styles.kpiMetricValue}>{kpi.target}</Text>
-                  </View>
-                  <View style={styles.kpiMetric}>
-                    <Text style={styles.kpiMetricLabel}>Trend</Text>
-                    <View style={styles.trendBadge}>
-                      <Ionicons name={getTrendIcon(kpi.trend)} size={14} color={kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary} />
-                      <Text style={[styles.trendText, { color: kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary }]}>{kpi.trend === 'up' ? 'Up' : kpi.trend === 'down' ? 'Down' : 'Stable'}</Text>
-                    </View>
-                  </View>
-                </View>
-              </Card>
-            </Animated.View>
-          );
-        })}
+        {filteredKpis.map((kpi, i) => (
+          <AnimatedKPICard key={kpi.id} kpi={kpi} index={i} getStatusConfig={getStatusConfig} getTrendIcon={getTrendIcon} />
+        ))}
       </ScrollView>
     </View>
+  );
+};
+
+const AnimatedKPICard = ({ kpi, index, getStatusConfig, getTrendIcon }: any) => {
+  const statusConfig = getStatusConfig(kpi.status);
+  const slideIn = useSlideIn('up', 350, 300 + index * 100);
+  return (
+    <Animated.View style={[{ opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }], marginBottom: spacing.md }]}>
+      <Card style={styles.kpiCard} padding="md">
+        <View style={styles.kpiHeader}>
+          <View style={styles.kpiTitleRow}>
+            <Text style={styles.kpiName}>{kpi.name}</Text>
+            <Badge text={kpi.status.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())} variant={statusConfig.variant} size="small" />
+          </View>
+          <Text style={styles.kpiCategory}>{kpi.category}</Text>
+        </View>
+
+        <View style={styles.kpiMetrics}>
+          <View style={styles.kpiMetric}>
+            <Text style={styles.kpiMetricLabel}>Current</Text>
+            <Text style={styles.kpiMetricValue}>{kpi.current}</Text>
+          </View>
+          <View style={styles.kpiMetric}>
+            <Text style={styles.kpiMetricLabel}>Target</Text>
+            <Text style={styles.kpiMetricValue}>{kpi.target}</Text>
+          </View>
+          <View style={styles.kpiMetric}>
+            <Text style={styles.kpiMetricLabel}>Trend</Text>
+            <View style={styles.trendBadge}>
+              <Ionicons name={getTrendIcon(kpi.trend)} size={14} color={kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary} />
+              <Text style={[styles.trendText, { color: kpi.trend === 'up' ? colors.success : kpi.trend === 'down' ? colors.error : colors.textTertiary }]}>{kpi.trend === 'up' ? 'Up' : kpi.trend === 'down' ? 'Down' : 'Stable'}</Text>
+            </View>
+          </View>
+        </View>
+      </Card>
+    </Animated.View>
   );
 };
 

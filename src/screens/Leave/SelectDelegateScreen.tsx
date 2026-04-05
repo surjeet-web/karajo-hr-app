@@ -41,7 +41,7 @@ export const SelectDelegateScreen: React.FC<any> = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Select Delegate" onBack={() => navigation.goBack()} />
-      <ProgressBar currentStep={3} totalSteps={6} title="Request Leave" />
+      <ProgressBar currentStep={3} totalSteps={4} title="Request Leave" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.heading}>Select a delegate</Text>

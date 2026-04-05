@@ -10,8 +10,10 @@ import { Header, Button } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
 import { useFadeIn, useSlideIn } from '../../utils/animations';
 
-export const PenaltySuccessScreen: React.FC<any> = ({ navigation }) => {
+export const PenaltySuccessScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { penalty, appealType } = route.params || {};
+  const reference = `APL-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')}`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -46,7 +48,7 @@ export const PenaltySuccessScreen: React.FC<any> = ({ navigation }) => {
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.textTertiary} />
             <View style={styles.summaryRowText}>
               <Text style={styles.summaryLabel}>Reference</Text>
-              <Text style={styles.summaryValue}>APL-2026-001</Text>
+              <Text style={styles.summaryValue}>{reference}</Text>
             </View>
           </View>
         </View>

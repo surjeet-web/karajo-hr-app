@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders } from '../../../utils/auth';
-import { getDB, saveDB } from '../../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, parseBody } from '../../utils/auth';
+import { getDB, saveDB, generateId } from '../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -27,13 +27,55 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request) {
   try {
     await requireAuth(request);
-    const body = await request.json();
-    return jsonResponse({ success: true, taskId: params.id, done: body.done });
+    const body = await parseBody(request);
+
+    if (!body.name) return errorResponse('Name is required', 400);
+    if (!body.role) return errorResponse('Role is required', 400);
+    if (!body.department) return errorResponse('Department is required', 400);
+
+    const newHire = {
+      id: generateId(),
+      name: body.name,
+      role: body.role,
+      department: body.department,
+      startDate: body.startDate || new Date().toISOString().split('T')[0],
+      avatar: body.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop',
+      progress: 0,
+      buddy: body.buddy || '',
+      status: 'in-progress',
+    };
+
+    return jsonResponse({ newHire }, 201);
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to create new hire', 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireAuth(request);
+    const body = await parseBody(request);
+
+    if (!body.taskId) return errorResponse('Task ID is required', 400);
+
+    return jsonResponse({ success: true, taskId: body.taskId, done: body.done });
   } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to update task', 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAuth(request);
+
+    return jsonResponse({ message: 'Onboarding record deleted' });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to delete onboarding record', 500);
   }
 }

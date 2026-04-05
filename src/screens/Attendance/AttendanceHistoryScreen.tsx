@@ -137,6 +137,17 @@ export const AttendanceHistoryScreen: React.FC<any> = ({ navigation }) => {
           </Card>
         )}
 
+        <TouchableOpacity style={styles.correctionButton} onPress={handleCorrectionPress} activeOpacity={0.7}>
+          <View style={styles.correctionIcon}>
+            <Ionicons name="create-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.correctionInfo}>
+            <Text style={styles.correctionTitle}>Request Attendance Correction</Text>
+            <Text style={styles.correctionSubtitle}>Fix a missing or incorrect check-in/out</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+        </TouchableOpacity>
+
         <View style={styles.historyHeaderRow}>
           <Text style={styles.sectionTitle}>History</Text>
           <TouchableOpacity onPress={handleFilterPress} activeOpacity={0.7} accessibilityLabel="Filter history">
@@ -198,6 +209,11 @@ const styles = StyleSheet.create({
   overtimeBanner: { marginBottom: spacing.md, backgroundColor: `${colors.accentPurple}10` },
   overtimeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   overtimeText: { ...typography.body, color: colors.accentPurple, fontWeight: '600' },
+  correctionButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primaryLighter, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.md, gap: spacing.md },
+  correctionIcon: { width: 40, height: 40, borderRadius: borderRadius.md, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
+  correctionInfo: { flex: 1 },
+  correctionTitle: { ...typography.body, color: colors.text, fontWeight: '600' },
+  correctionSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   historyHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md, marginTop: spacing.lg },
   sectionTitle: { ...typography.label, color: colors.textTertiary },
   filterText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' },

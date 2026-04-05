@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import type { NativeStackScreenProps, RouteProp } from '@react-navigation/native';
 import {
   View,
@@ -17,14 +17,46 @@ import { shortcuts } from '../../data/mockData';
 import { AnimatedCard, AnimatedListItem, PulsingIcon } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
 import { useFadeIn, useSlideIn, usePressAnimation, useStaggerList } from '../../utils/animations';
+import { useAuth } from '../../context/AuthContext';
 
 export const ShortcutsScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  useEffect(() => { hapticFeedback('medium'); }, []);  const fadeIn = useFadeIn();
-  const allShortcuts = shortcuts.flat ? shortcuts : Object.values(shortcuts.reduce((acc, s) => { if (!acc[s.category]) acc[s.category] = []; acc[s.category].push(s); return acc; }, {})).flat();
-  const staggerAnimations = useStaggerList(allShortcuts.length, 40, 'up');
+  const { hasPermission, hasAnyPermission } = useAuth();
 
-  const groupedShortcuts = shortcuts.reduce((acc, shortcut) => {
+  useEffect(() => { hapticFeedback('medium'); }, []);
+  const fadeIn = useFadeIn();
+
+  const shortcutPermissionMap: Record<string, string[]> = {
+    attendance: ['employee:attendance:read'],
+    leave: ['employee:leave:read'],
+    permission: ['employee:permission:read'],
+    overtime: ['employee:overtime:read'],
+    shift: ['employee:attendance:read'],
+    payslip: ['employee:payslip:read'],
+    reimburse: ['employee:expense:read'],
+    penalty: ['employee:penalty:read'],
+    directory: ['employee:directory:read'],
+    orgchart: ['employee:directory:read'],
+    onboarding: ['hr:onboarding:manage'],
+    performance: ['employee:performance:read'],
+    kpi: ['employee:performance:read'],
+    goals: ['employee:performance:read'],
+    feedback: ['employee:performance:review'],
+    team: ['employee:directory:read'],
+    assets: ['employee:profile:read'],
+    docs: ['employee:profile:read'],
+    manage: ['employee:profile:read'],
+  };
+
+  const filteredShortcuts = useMemo(() => {
+    return shortcuts.filter(shortcut => {
+      const requiredPerms = shortcutPermissionMap[shortcut.id];
+      if (!requiredPerms || requiredPerms.length === 0) return true;
+      return hasAnyPermission(requiredPerms as any);
+    });
+  }, []);
+
+  const groupedShortcuts = filteredShortcuts.reduce((acc, shortcut) => {
     if (!acc[shortcut.category]) {
       acc[shortcut.category] = [];
     }
@@ -71,10 +103,10 @@ export const ShortcutsScreen: React.FC<any> = ({ navigation }) => {
         navigation.navigate('OvertimeHome');
         break;
       case 'payslip':
-        navigation.navigate('PayslipHome');
+        navigation.navigate('Finance', { screen: 'PayslipHome' });
         break;
       case 'reimburse':
-        navigation.navigate('ExpenseOverview');
+        navigation.navigate('Finance', { screen: 'ExpenseOverview' });
         break;
       case 'penalty':
         navigation.navigate('PenaltyHome');
@@ -99,6 +131,24 @@ export const ShortcutsScreen: React.FC<any> = ({ navigation }) => {
         break;
       case 'feedback':
         navigation.navigate('Feedback360');
+        break;
+      case 'permission':
+        navigation.navigate('PermissionHome');
+        break;
+      case 'shift':
+        navigation.navigate('AttendanceHistory');
+        break;
+      case 'team':
+        navigation.navigate('EmployeeDirectory');
+        break;
+      case 'assets':
+        navigation.navigate('Profile');
+        break;
+      case 'docs':
+        navigation.navigate('Profile');
+        break;
+      case 'manage':
+        navigation.navigate('Profile');
         break;
       default:
         break;

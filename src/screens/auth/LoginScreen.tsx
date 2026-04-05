@@ -30,7 +30,7 @@ const ROLE_OPTIONS = [
   { label: 'CEO', value: 'ceo' },
 ];
 
-export const LoginScreen: React.FC = () => {
+export const LoginScreen: React.FC<any> = ({ navigation }) => {
   const { login } = useAuth();
 
   const [email, setEmail] = useState<string>('');
@@ -99,11 +99,7 @@ export const LoginScreen: React.FC = () => {
 
   const handleForgotPassword = (): void => {
     hapticFeedback('light');
-    Alert.alert(
-      'Forgot Password',
-      'Password reset functionality will be available soon.',
-      [{ text: 'OK' }]
-    );
+    navigation.navigate('ForgotPassword');
   };
 
   const selectRole = (roleValue) => {
@@ -267,10 +263,37 @@ export const LoginScreen: React.FC = () => {
                   loading={isLoading}
                   haptic={false}
                   style={styles.signInButton}
-                  accessibilityLabel="Sign in button"
                 />
               </View>
             </Card>
+
+            <View style={styles.quickLoginSection}>
+              <Text style={styles.quickLoginTitle}>Quick Sign In</Text>
+              <View style={styles.quickLoginGrid}>
+                {ROLE_OPTIONS.map(opt => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={styles.quickLoginBtn}
+                    onPress={() => {
+                      setEmail(`${opt.value === 'employee' ? 'sarah' : opt.value === 'team_lead' ? 'alex' : opt.value === 'manager' ? 'james' : opt.value === 'hr_specialist' ? 'maria' : opt.value === 'hr_manager' ? 'linda' : opt.value === 'recruiter' ? 'david' : opt.value === 'accountant' ? 'rachel' : opt.value === 'finance_mgr' ? 'tom' : 'robert'}@karajo.com`);
+                      setSelectedRole(opt.value);
+                      setPassword('password123');
+                      hapticFeedback('medium');
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="person-circle" size={24} color={colors.primary} />
+                    <Text style={styles.quickLoginLabel} numberOfLines={1}>{opt.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.quickLoginHint}>Tap a role to auto-fill credentials, then press Sign In</Text>
+            </View>
+
+            <TouchableOpacity style={styles.signupLink} onPress={() => navigation.navigate('Signup')} activeOpacity={0.7}>
+              <Text style={styles.signupLinkText}>Don't have an account? </Text>
+              <Text style={[styles.signupLinkText, styles.signupLinkBold]}>Create Account</Text>
+            </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -417,4 +440,13 @@ const styles = StyleSheet.create({
   signInButton: {
     marginTop: spacing.sm,
   },
+  signupLink: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
+  signupLinkText: { ...typography.body, color: colors.textSecondary },
+  signupLinkBold: { color: colors.primary, fontWeight: '600' },
+  quickLoginSection: { marginTop: spacing.xl },
+  quickLoginTitle: { ...typography.label, color: colors.textTertiary, textAlign: 'center', marginBottom: spacing.md },
+  quickLoginGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center' },
+  quickLoginBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  quickLoginLabel: { ...typography.bodySmall, color: colors.text, fontWeight: '500' },
+  quickLoginHint: { ...typography.caption, color: colors.textTertiary, textAlign: 'center', marginTop: spacing.sm },
 });

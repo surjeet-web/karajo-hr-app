@@ -10,8 +10,10 @@ import { Header, Button, AnimatedListItem } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
 import { useFadeIn, useSlideIn } from '../../utils/animations';
 import { getState, resetState } from '../../store';
+import { useAuth } from '../../context/AuthContext';
 
 export const ProfileScreen: React.FC<any> = ({ navigation }) => {
+  const { logout } = useAuth();
   const insets = useSafeAreaInsets();
   const user = getState().user;
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -23,19 +25,16 @@ export const ProfileScreen: React.FC<any> = ({ navigation }) => {
     }, 1000);
   }, []);
 
-  const handleLogout = (): void => {
+  const handleLogout = async (): Promise<void> => {
     hapticFeedback('medium');
-    resetState();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    await logout();
   };
 
   const menuItems = [
     { icon: 'person-outline', title: 'Personal Information', subtitle: 'Contact details, address, and emergency', route: 'PersonalInfo' },
     { icon: 'shield-checkmark-outline', title: 'Identity Verification', subtitle: 'Passport, ID card, tax information', route: 'IdentityVerification' },
     { icon: 'briefcase-outline', title: 'Employment Information', subtitle: 'Position, department, employment details', route: 'EmploymentInfo' },
+    { icon: 'lock-closed-outline', title: 'Change Password', subtitle: 'Update your account password', route: 'ChangePassword' },
   ];
 
   return (

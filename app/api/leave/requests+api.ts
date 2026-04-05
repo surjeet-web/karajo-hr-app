@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
-import { getDB, saveDB, generateId } from '../../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../utils/auth';
+import { getDB, saveDB, generateId } from '../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -104,5 +104,112 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create leave request', 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireAuth(request);
+    const body = await parseBody(request);
+
+    if (!body.id) return errorResponse('Leave request ID is required', 400);
+
+    const database = await getDB();
+    const index = database.leave.requests.findIndex((r: { id: number }) => r.id === body.id);
+
+    if (index === -1) return errorResponse('Leave request not found', 404);
+
+    const existing = database.leave.requests[index];
+
+    if (existing.status !== 'pending') {
+      return errorResponse('Cannot update a leave request that is not pending', 400);
+    }
+
+    if (body.type && body.type !== existing.type) {
+      const oldBalance = database.leave.balances.find((b: { type: string }) => b.type === existing.type);
+      if (oldBalance && oldBalance.remaining !== null) {
+        oldBalance.used -= existing.days;
+        oldBalance.remaining += existing.days;
+      }
+
+      const newBalance = database.leave.balances.find((b: { type: string }) => b.type === body.type);
+      if (newBalance && newBalance.remaining !== null && newBalance.remaining < existing.days) {
+        oldBalance.used += existing.days;
+        oldBalance.remaining -= existing.days;
+        return errorResponse(`Insufficient ${body.type} leave balance`, 400);
+      }
+      if (newBalance && newBalance.remaining !== null) {
+        newBalance.used += existing.days;
+        newBalance.remaining -= existing.days;
+      }
+    }
+
+    if (body.startDate && body.endDate) {
+      const start = new Date(body.startDate);
+      const end = new Date(body.endDate);
+      const newDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const balance = database.leave.balances.find((b: { type: string }) => b.type === (body.type || existing.type));
+      if (balance && balance.remaining !== null) {
+        balance.used -= existing.days;
+        balance.remaining += existing.days;
+        if (balance.remaining < newDays) {
+          balance.used += existing.days;
+          balance.remaining -= existing.days;
+          return errorResponse('Insufficient leave balance for new dates', 400);
+        }
+        balance.used += newDays;
+        balance.remaining -= newDays;
+        database.leave.requests[index].days = newDays;
+      }
+    }
+
+    database.leave.requests[index] = {
+      ...database.leave.requests[index],
+      type: body.type || existing.type,
+      startDate: body.startDate || existing.startDate,
+      endDate: body.endDate || existing.endDate,
+      reason: body.reason !== undefined ? body.reason : existing.reason,
+      delegate: body.delegate !== undefined ? body.delegate : existing.delegate,
+      documents: body.documents !== undefined ? body.documents : existing.documents,
+    };
+
+    await saveDB(database);
+    return jsonResponse({ request: database.leave.requests[index] });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to update leave request', 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAuth(request);
+    const params = getQueryParams(request);
+    const id = parseInt(params.get('id') || '0');
+
+    if (!id) return errorResponse('Leave request ID is required', 400);
+
+    const database = await getDB();
+    const index = database.leave.requests.findIndex((r: { id: number }) => r.id === id);
+
+    if (index === -1) return errorResponse('Leave request not found', 404);
+
+    const deleted = database.leave.requests[index];
+
+    if (deleted.status === 'approved' || deleted.status === 'pending') {
+      const balance = database.leave.balances.find((b: { type: string }) => b.type === deleted.type);
+      if (balance && balance.remaining !== null) {
+        balance.used -= deleted.days;
+        balance.remaining += deleted.days;
+      }
+    }
+
+    database.leave.requests.splice(index, 1);
+    await saveDB(database);
+
+    return jsonResponse({ message: 'Leave request deleted', request: deleted });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to delete leave request', 500);
   }
 }

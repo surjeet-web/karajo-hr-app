@@ -78,6 +78,20 @@ export const MyTeamScreen: React.FC<any> = ({ navigation }) => {
                 <Text style={styles.empName}>{emp.name}</Text>
                 <Text style={styles.empRole}>{emp.role}</Text>
                 <Text style={styles.empDept}>{emp.department} - {emp.location}</Text>
+                <View style={styles.empMetrics}>
+                  {emp.rating && (
+                    <View style={styles.metricBadge}>
+                      <Ionicons name="star" size={10} color={colors.warning} />
+                      <Text style={styles.metricText}>{emp.rating.toFixed(1)}</Text>
+                    </View>
+                  )}
+                  {emp.kpiScore && (
+                    <View style={[styles.metricBadge, { backgroundColor: colors.primaryLighter }]}>
+                      <Ionicons name="speedometer" size={10} color={colors.primary} />
+                      <Text style={[styles.metricText, { color: colors.primary }]}>{emp.kpiScore}%</Text>
+                    </View>
+                  )}
+                </View>
               </View>
               <Badge text={status} variant={variant} size="small" />
             </TouchableOpacity>
@@ -112,6 +126,9 @@ const styles = StyleSheet.create({
   empName: { ...typography.body, color: colors.text, fontWeight: '600' },
   empRole: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
   empDept: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
+  empMetrics: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs },
+  metricBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: colors.warningLight, paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: borderRadius.full },
+  metricText: { ...typography.caption, color: colors.warning, fontWeight: '600' },
   emptyState: { alignItems: 'center', paddingVertical: spacing.xxxxl },
   emptyTitle: { ...typography.h4, color: colors.text, marginTop: spacing.md },
   emptySubtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },

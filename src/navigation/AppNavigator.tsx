@@ -1,13 +1,16 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { LoadingScreen } from '../components/CommonStates';
+import type { RoleId } from '../utils/rbac';
+import { AnimatedTabButton } from '../components/AnimatedTabButton';
 
 // Employee Screens
 import { HomeScreen } from '../screens/Home/HomeScreen';
@@ -55,11 +58,16 @@ import { PermissionRequestScreen } from '../screens/Permission/PermissionRequest
 import { PermissionReviewScreen } from '../screens/Permission/PermissionReviewScreen';
 import { PermissionSuccessScreen } from '../screens/Permission/PermissionSuccessScreen';
 import { OvertimeHomeScreen } from '../screens/Overtime/OvertimeHomeScreen';
+import { OvertimeRequestScreen } from '../screens/Overtime/OvertimeRequestScreen';
+import { OvertimeReviewScreen } from '../screens/Overtime/OvertimeReviewScreen';
 import { OvertimeSuccessScreen } from '../screens/Overtime/OvertimeSuccessScreen';
 import { PayslipHomeScreen } from '../screens/Finance/PayslipHomeScreen';
 import { ExpenseOverviewScreen } from '../screens/Finance/ExpenseOverviewScreen';
 import { ExpenseDetailScreen } from '../screens/Finance/ExpenseDetailScreen';
 import { ProfileScreen } from '../screens/Profile/ProfileScreen';
+import { PersonalInfoScreen } from '../screens/Profile/PersonalInfoScreen';
+import { IdentityVerificationScreen } from '../screens/Profile/IdentityVerificationScreen';
+import { EmploymentInfoScreen } from '../screens/Profile/EmploymentInfoScreen';
 import { PenaltyHomeScreen } from '../screens/Penalty/PenaltyHomeScreen';
 import { PenaltyDetailScreen } from '../screens/Penalty/PenaltyDetailScreen';
 import { PenaltyAppealScreen } from '../screens/Penalty/PenaltyAppealScreen';
@@ -77,6 +85,10 @@ import { Feedback360Screen } from '../screens/Performance/Feedback360Screen';
 
 // Auth
 import { LoginScreen } from '../screens/auth/LoginScreen';
+import { SignupScreen } from '../screens/auth/SignupScreen';
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../screens/auth/ResetPasswordScreen';
+import { ChangePasswordScreen } from '../screens/auth/ChangePasswordScreen';
 
 // HR Manager Screens
 import { HRDashboardScreen } from '../screens/hr/HRDashboardScreen';
@@ -90,6 +102,7 @@ import { HRAnalyticsScreen } from '../screens/hr/HRAnalyticsScreen';
 import { HRLeaveManagementScreen } from '../screens/hr/HRLeaveManagementScreen';
 import { HROnboardingManagementScreen } from '../screens/hr/HROnboardingManagementScreen';
 import { HROffboardingScreen } from '../screens/hr/HROffboardingScreen';
+import { OffboardingScreen } from '../screens/Offboarding/OffboardingScreen';
 import { HRPolicyManagementScreen } from '../screens/hr/HRPolicyManagementScreen';
 import { HRComplianceScreen } from '../screens/hr/HRComplianceScreen';
 import { HRBulkActionsScreen } from '../screens/hr/HRBulkActionsScreen';
@@ -107,6 +120,8 @@ import { FinanceBudgetScreen } from '../screens/finance-mgr/FinanceBudgetScreen'
 import { FinanceTaxScreen } from '../screens/finance-mgr/FinanceTaxScreen';
 import { FinanceAuditScreen } from '../screens/finance-mgr/FinanceAuditScreen';
 import { PayrollDetailScreen } from '../screens/finance-mgr/PayrollDetailScreen';
+import { PayrollHistoryScreen } from '../screens/finance-mgr/PayrollHistoryScreen';
+import { FinanceReportDetailScreen } from '../screens/finance-mgr/FinanceReportDetailScreen';
 
 // Department Manager Screens
 import { ManagerDashboardScreen } from '../screens/manager/ManagerDashboardScreen';
@@ -114,18 +129,27 @@ import { MyTeamScreen } from '../screens/manager/MyTeamScreen';
 import { ManagerApprovalScreen } from '../screens/manager/ManagerApprovalScreen';
 import { TeamPlanningScreen } from '../screens/manager/TeamPlanningScreen';
 import { TeamReportsScreen } from '../screens/manager/TeamReportsScreen';
+import { TeamAttendanceScreen } from '../screens/manager/TeamAttendanceScreen';
+import { TeamPerformanceScreen } from '../screens/manager/TeamPerformanceScreen';
+import { TeamGoalsScreen } from '../screens/manager/TeamGoalsScreen';
 
 // CEO Screens
 import { CEODashboardScreen } from '../screens/ceo/CEODashboardScreen';
 import { CEOAnalyticsScreen } from '../screens/ceo/CEOAnalyticsScreen';
 import { DepartmentOverviewScreen } from '../screens/ceo/DepartmentOverviewScreen';
+import { DepartmentDetailScreen } from '../screens/ceo/DepartmentDetailScreen';
 import { CompanyGoalsScreen } from '../screens/ceo/CompanyGoalsScreen';
 import { CEOReportsScreen } from '../screens/ceo/CEOReportsScreen';
+import { WorkforcePlanningScreen } from '../screens/ceo/WorkforcePlanningScreen';
 
 // ==================== TYPES ====================
 
 export type RootStackParamList = {
   Login: undefined;
+  Signup: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { token?: string; email?: string };
+  ChangePassword: undefined;
   MainTabs: undefined;
   AIChat: undefined;
   AIChatExpanded: undefined;
@@ -157,6 +181,8 @@ export type RootStackParamList = {
   PermissionReview: undefined;
   PermissionSuccess: undefined;
   OvertimeHome: undefined;
+  OvertimeRequest: undefined;
+  OvertimeReview: undefined;
   OvertimeSuccess: undefined;
   Profile: undefined;
   PenaltyHome: undefined;
@@ -188,6 +214,16 @@ export type RootStackParamList = {
   FinanceTax: undefined;
   FinanceAudit: undefined;
   PayrollDetail: undefined;
+  PayrollHistory: undefined;
+  FinanceReportDetail: undefined;
+  PersonalInfo: undefined;
+  IdentityVerification: undefined;
+  EmploymentInfo: undefined;
+  TeamAttendance: undefined;
+  TeamPerformance: undefined;
+  TeamGoals: undefined;
+  DepartmentDetail: undefined;
+  WorkforcePlanning: undefined;
 };
 
 export type HomeStackParamList = {
@@ -263,16 +299,7 @@ export type CEOTabParamList = {
   'CEO Reports': undefined;
 };
 
-export type UserRole =
-  | 'employee'
-  | 'hr_manager'
-  | 'hr_specialist'
-  | 'recruiter'
-  | 'finance_mgr'
-  | 'accountant'
-  | 'manager'
-  | 'team_lead'
-  | 'ceo';
+export type UserRole = RoleId;
 
 // ==================== NAVIGATORS ====================
 
@@ -499,7 +526,7 @@ export const AppNavigator: React.FC = () => {
     return <LoadingScreen message="Loading Karajo HR..." />;
   }
 
-  const getRoleNavigator = (): React.ReactNode => {
+  const RoleNavigator: React.FC = () => {
     switch (role) {
       case 'hr_manager':
       case 'hr_specialist':
@@ -519,84 +546,117 @@ export const AppNavigator: React.FC = () => {
   };
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        ) : (
-          <>
-            <Stack.Screen name="MainTabs">{() => getRoleNavigator()}</Stack.Screen>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            animationDuration: 250,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+          }}
+        >
+          {!isAuthenticated ? (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Signup" component={SignupScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="MainTabs" component={RoleNavigator} options={{ animation: 'fade', animationDuration: 200, gestureEnabled: false }} />
 
-            {/* Employee-only screens (accessible from any role via shortcuts) */}
-            <Stack.Screen name="AIChat" component={AIChatScreen} />
-            <Stack.Screen name="AIChatExpanded" component={AIChatExpandedScreen} />
-            <Stack.Screen name="AIChatConversation" component={AIChatConversationScreen} />
-            <Stack.Screen name="DocumentView" component={DocumentViewScreen} />
-            <Stack.Screen name="AttendanceLocation" component={AttendanceLocationScreen} />
-            <Stack.Screen name="FaceValidation" component={FaceValidationScreen} />
-            <Stack.Screen name="QRValidation" component={QRValidationScreen} />
-            <Stack.Screen name="AttendanceSuccess" component={AttendanceSuccessScreen} />
-            <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryScreen} />
-            <Stack.Screen name="AttendanceFilter" component={AttendanceFilterScreen} options={{ presentation: 'modal' }} />
-            <Stack.Screen name="MonthlySummary" component={MonthlySummaryScreen} />
-            <Stack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} />
-            <Stack.Screen name="AttendanceCalendar" component={AttendanceCalendarScreen} />
-            <Stack.Screen name="CorrectionReason" component={CorrectionReasonScreen} />
-            <Stack.Screen name="CorrectionForm" component={CorrectionFormScreen} />
-            <Stack.Screen name="CorrectionSummary" component={CorrectionSummaryScreen} />
-            <Stack.Screen name="CorrectionSubmitted" component={CorrectionSubmittedScreen} />
-            <Stack.Screen name="LeaveHome" component={LeaveHomeScreen} />
-            <Stack.Screen name="LeaveHistory" component={LeaveHistoryScreen} />
-            <Stack.Screen name="SelectLeaveType" component={SelectLeaveTypeScreen} />
-            <Stack.Screen name="SelectDates" component={SelectDatesScreen} />
-            <Stack.Screen name="SelectDelegate" component={SelectDelegateScreen} />
-            <Stack.Screen name="UploadDocument" component={UploadDocumentScreen} />
-            <Stack.Screen name="LeaveReview" component={LeaveReviewScreen} />
-            <Stack.Screen name="LeaveSuccess" component={LeaveSuccessScreen} />
-            <Stack.Screen name="PermissionHome" component={PermissionHomeScreen} />
-            <Stack.Screen name="PermissionRequest" component={PermissionRequestScreen} />
-            <Stack.Screen name="PermissionReview" component={PermissionReviewScreen} />
-            <Stack.Screen name="PermissionSuccess" component={PermissionSuccessScreen} />
-            <Stack.Screen name="OvertimeHome" component={OvertimeHomeScreen} />
-            <Stack.Screen name="OvertimeSuccess" component={OvertimeSuccessScreen} />
-            <Stack.Screen name="Profile" component={ProfileScreen} />
-            <Stack.Screen name="PenaltyHome" component={PenaltyHomeScreen} />
-            <Stack.Screen name="PenaltyDetail" component={PenaltyDetailScreen} />
-            <Stack.Screen name="PenaltyAppeal" component={PenaltyAppealScreen} />
-            <Stack.Screen name="PenaltyReview" component={PenaltyReviewScreen} />
-            <Stack.Screen name="PenaltySuccess" component={PenaltySuccessScreen} />
-            <Stack.Screen name="EmployeeDirectory" component={EmployeeDirectoryScreen} />
-            <Stack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} />
-            <Stack.Screen name="OrgChart" component={OrgChartScreen} />
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-            <Stack.Screen name="PerformanceDashboard" component={PerformanceDashboardScreen} />
-            <Stack.Screen name="KPITracking" component={KPITrackingScreen} />
-            <Stack.Screen name="PerformanceReview" component={PerformanceReviewScreen} />
-            <Stack.Screen name="GoalSetting" component={GoalSettingScreen} />
-            <Stack.Screen name="Feedback360" component={Feedback360Screen} />
-            
-            {/* HR Management Screens */}
-            <Stack.Screen name="HREmployeeProfile" component={HREmployeeProfileScreen} />
-            <Stack.Screen name="HRApprovalDetail" component={HRApprovalDetailScreen} />
-            <Stack.Screen name="HRReportDetail" component={HRReportDetailScreen} />
-            <Stack.Screen name="HRAnalytics" component={HRAnalyticsScreen} />
-            <Stack.Screen name="HRLeaveManagement" component={HRLeaveManagementScreen} />
-            <Stack.Screen name="HROnboardingManagement" component={HROnboardingManagementScreen} />
-            <Stack.Screen name="HROffboarding" component={HROffboardingScreen} />
-            <Stack.Screen name="HRPolicyManagement" component={HRPolicyManagementScreen} />
-            <Stack.Screen name="HRCompliance" component={HRComplianceScreen} />
-            <Stack.Screen name="HRBulkActions" component={HRBulkActionsScreen} />
-            
-            {/* Finance Management Screens */}
-            <Stack.Screen name="FinanceEmployee" component={FinanceEmployeeScreen} />
-            <Stack.Screen name="FinanceBudget" component={FinanceBudgetScreen} />
-            <Stack.Screen name="FinanceTax" component={FinanceTaxScreen} />
-            <Stack.Screen name="FinanceAudit" component={FinanceAuditScreen} />
-            <Stack.Screen name="PayrollDetail" component={PayrollDetailScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+              {/* Employee-only screens (accessible from any role via shortcuts) */}
+              <Stack.Screen name="AIChat" component={AIChatScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="AIChatExpanded" component={AIChatExpandedScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="AIChatConversation" component={AIChatConversationScreen} />
+              <Stack.Screen name="DocumentView" component={DocumentViewScreen} />
+              <Stack.Screen name="AttendanceLocation" component={AttendanceLocationScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="FaceValidation" component={FaceValidationScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="QRValidation" component={QRValidationScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="AttendanceSuccess" component={AttendanceSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryScreen} />
+              <Stack.Screen name="AttendanceFilter" component={AttendanceFilterScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="MonthlySummary" component={MonthlySummaryScreen} />
+              <Stack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} />
+              <Stack.Screen name="AttendanceCalendar" component={AttendanceCalendarScreen} />
+              <Stack.Screen name="CorrectionReason" component={CorrectionReasonScreen} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="CorrectionForm" component={CorrectionFormScreen} />
+              <Stack.Screen name="CorrectionSummary" component={CorrectionSummaryScreen} />
+              <Stack.Screen name="CorrectionSubmitted" component={CorrectionSubmittedScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="LeaveHome" component={LeaveHomeScreen} />
+              <Stack.Screen name="LeaveHistory" component={LeaveHistoryScreen} />
+              <Stack.Screen name="SelectLeaveType" component={SelectLeaveTypeScreen} />
+              <Stack.Screen name="SelectDates" component={SelectDatesScreen} />
+              <Stack.Screen name="SelectDelegate" component={SelectDelegateScreen} />
+              <Stack.Screen name="UploadDocument" component={UploadDocumentScreen} />
+              <Stack.Screen name="LeaveReview" component={LeaveReviewScreen} />
+              <Stack.Screen name="LeaveSuccess" component={LeaveSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="PermissionHome" component={PermissionHomeScreen} />
+              <Stack.Screen name="PermissionRequest" component={PermissionRequestScreen} />
+              <Stack.Screen name="PermissionReview" component={PermissionReviewScreen} />
+              <Stack.Screen name="PermissionSuccess" component={PermissionSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="OvertimeHome" component={OvertimeHomeScreen} />
+              <Stack.Screen name="OvertimeRequest" component={OvertimeRequestScreen} />
+              <Stack.Screen name="OvertimeReview" component={OvertimeReviewScreen} />
+              <Stack.Screen name="OvertimeSuccess" component={OvertimeSuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="Profile" component={ProfileScreen} />
+              <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+              <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
+              <Stack.Screen name="EmploymentInfo" component={EmploymentInfoScreen} />
+              <Stack.Screen name="PenaltyHome" component={PenaltyHomeScreen} />
+              <Stack.Screen name="PenaltyDetail" component={PenaltyDetailScreen} />
+              <Stack.Screen name="PenaltyAppeal" component={PenaltyAppealScreen} />
+              <Stack.Screen name="PenaltyReview" component={PenaltyReviewScreen} />
+              <Stack.Screen name="PenaltySuccess" component={PenaltySuccessScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="EmployeeDirectory" component={EmployeeDirectoryScreen} />
+              <Stack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} />
+              <Stack.Screen name="OrgChart" component={OrgChartScreen} />
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="Offboarding" component={OffboardingScreen} options={{ animation: 'fade', animationDuration: 300, gestureEnabled: false }} />
+              <Stack.Screen name="PerformanceDashboard" component={PerformanceDashboardScreen} />
+              <Stack.Screen name="KPITracking" component={KPITrackingScreen} />
+              <Stack.Screen name="PerformanceReview" component={PerformanceReviewScreen} />
+              <Stack.Screen name="GoalSetting" component={GoalSettingScreen} />
+              <Stack.Screen name="Feedback360" component={Feedback360Screen} />
+              
+              {/* HR Management Screens */}
+              <Stack.Screen name="HREmployeeProfile" component={HREmployeeProfileScreen} />
+              <Stack.Screen name="HRApprovalDetail" component={HRApprovalDetailScreen} />
+              <Stack.Screen name="HRReportDetail" component={HRReportDetailScreen} />
+              <Stack.Screen name="HRAnalytics" component={HRAnalyticsScreen} />
+              <Stack.Screen name="HRLeaveManagement" component={HRLeaveManagementScreen} />
+              <Stack.Screen name="HROnboardingManagement" component={HROnboardingManagementScreen} />
+              <Stack.Screen name="HROffboarding" component={HROffboardingScreen} />
+              <Stack.Screen name="HRPolicyManagement" component={HRPolicyManagementScreen} />
+              <Stack.Screen name="HRCompliance" component={HRComplianceScreen} />
+              <Stack.Screen name="HRBulkActions" component={HRBulkActionsScreen} />
+              
+              {/* Finance Management Screens */}
+              <Stack.Screen name="FinanceEmployee" component={FinanceEmployeeScreen} />
+              <Stack.Screen name="FinanceBudget" component={FinanceBudgetScreen} />
+              <Stack.Screen name="FinanceTax" component={FinanceTaxScreen} />
+              <Stack.Screen name="FinanceAudit" component={FinanceAuditScreen} />
+              <Stack.Screen name="PayrollDetail" component={PayrollDetailScreen} />
+              <Stack.Screen name="PayrollHistory" component={PayrollHistoryScreen} />
+              <Stack.Screen name="FinanceReportDetail" component={FinanceReportDetailScreen} />
+              
+              {/* Manager Management Screens */}
+              <Stack.Screen name="TeamAttendance" component={TeamAttendanceScreen} />
+              <Stack.Screen name="TeamPerformance" component={TeamPerformanceScreen} />
+              <Stack.Screen name="TeamGoals" component={TeamGoalsScreen} />
+              
+              {/* CEO Management Screens */}
+              <Stack.Screen name="DepartmentDetail" component={DepartmentDetailScreen} />
+              <Stack.Screen name="WorkforcePlanning" component={WorkforcePlanningScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 };
 
@@ -610,8 +670,8 @@ const styles = StyleSheet.create({
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   tabLabel: { fontSize: 11, fontWeight: '500' as const, marginTop: 4 },
   centerButton: { top: -20, justifyContent: 'center' as const, alignItems: 'center' as const },
@@ -619,6 +679,6 @@ const styles = StyleSheet.create({
     width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary,
     justifyContent: 'center' as const, alignItems: 'center' as const,
     shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+    shadowOpacity: 0.4, shadowRadius: 12, elevation: 10,
   },
 });

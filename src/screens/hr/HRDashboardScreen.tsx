@@ -10,6 +10,7 @@ import { Header, Badge, Card } from '../../components';
 import { StatCard, ApprovalCard, DepartmentCard } from '../../components/management';
 import { hapticFeedback } from '../../utils/haptics';
 import { getState, subscribe } from '../../store';
+import { performanceData } from '../../data/mockData';
 import { formatCurrency } from '../../utils/calculations';
 
 export const HRDashboardScreen: React.FC<any> = ({ navigation }) => {
@@ -57,6 +58,10 @@ export const HRDashboardScreen: React.FC<any> = ({ navigation }) => {
     ...expenses.requests.filter(e => e.status === 'pending').map(e => ({ type: 'expense', id: e.id, requesterName: e.title, date: e.date, amount: e.amount, status: e.status })),
   ].sort((a, b) => b.id - a.id).slice(0, 5);
 
+  const avgRating = performanceData.overview.overallRating;
+  const completedReviews = performanceData.overview.completedReviews;
+  const topPerformers = performanceData.overview.topPerformers;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="HR Dashboard" />
@@ -83,7 +88,8 @@ export const HRDashboardScreen: React.FC<any> = ({ navigation }) => {
               { icon: 'calendar', label: 'Attendance', color: colors.warning, screen: 'HRAttendanceManagement' },
               { icon: 'umbrella', label: 'Leave Mgmt', color: colors.accentPurple, screen: 'HRLeaveManagement' },
               { icon: 'school', label: 'Onboarding', color: colors.info, screen: 'HROnboardingManagement' },
-              { icon: 'bar-chart', label: 'Reports', color: colors.accentOrange, screen: 'HRReports' },
+              { icon: 'trending-up', label: 'Performance', color: colors.accentOrange, screen: 'PerformanceDashboard' },
+              { icon: 'bar-chart', label: 'Reports', color: colors.textSecondary, screen: 'HRReports' },
             ].map(action => (
               <TouchableOpacity key={action.label} style={[styles.quickAction, { backgroundColor: `${action.color}10` }]}
                 onPress={() => { hapticFeedback('medium'); navigation.navigate(action.screen); }} activeOpacity={0.7}>
@@ -91,6 +97,32 @@ export const HRDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <Text style={[styles.quickActionLabel, { color: action.color }]}>{action.label}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Performance Overview</Text>
+            <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('PerformanceDashboard'); }}>
+              <Text style={styles.viewAll}>View Details</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.perfGrid}>
+            <TouchableOpacity style={[styles.perfStatCard, { backgroundColor: `${colors.primary}10` }]} onPress={() => { hapticFeedback('light'); navigation.navigate('PerformanceDashboard'); }} activeOpacity={0.7}>
+              <Ionicons name="star" size={24} color={colors.primary} />
+              <Text style={[styles.perfStatValue, { color: colors.primary }]}>{avgRating}</Text>
+              <Text style={styles.perfStatLabel}>Avg Rating</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.perfStatCard, { backgroundColor: `${colors.success}10` }]} onPress={() => { hapticFeedback('light'); navigation.navigate('PerformanceReview'); }} activeOpacity={0.7}>
+              <Ionicons name="checkmark-done" size={24} color={colors.success} />
+              <Text style={[styles.perfStatValue, { color: colors.success }]}>{completedReviews}</Text>
+              <Text style={styles.perfStatLabel}>Reviews Done</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.perfStatCard, { backgroundColor: `${colors.warning}10` }]} onPress={() => { hapticFeedback('light'); navigation.navigate('KPITracking'); }} activeOpacity={0.7}>
+              <Ionicons name="people" size={24} color={colors.warning} />
+              <Text style={[styles.perfStatValue, { color: colors.warning }]}>{topPerformers}</Text>
+              <Text style={styles.perfStatLabel}>Top Performers</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -133,4 +165,8 @@ const styles = StyleSheet.create({
   quickActionLabel: { ...typography.label, fontWeight: '600' },
   emptyCard: { alignItems: 'center', gap: spacing.sm },
   emptyText: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  perfGrid: { flexDirection: 'row', gap: spacing.md },
+  perfStatCard: { flex: 1, borderRadius: borderRadius.lg, padding: spacing.md, alignItems: 'center', gap: spacing.xs },
+  perfStatValue: { ...typography.h3, fontWeight: '700' },
+  perfStatLabel: { ...typography.caption, color: colors.textSecondary },
 });

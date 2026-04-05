@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
-import { getDB, saveDB, generateId } from '../../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../utils/auth';
+import { getDB, saveDB, generateId } from '../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -78,5 +78,83 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create permission request', 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireAuth(request);
+    const body = await parseBody(request);
+
+    if (!body.id) return errorResponse('Permission request ID is required', 400);
+
+    const database = await getDB();
+    const index = database.permission.requests.findIndex((r: { id: number }) => r.id === body.id);
+
+    if (index === -1) return errorResponse('Permission request not found', 404);
+
+    const existing = database.permission.requests[index];
+
+    if (existing.status !== 'pending') {
+      return errorResponse('Cannot update a permission request that is not pending', 400);
+    }
+
+    let newDuration = existing.duration;
+    if (body.startTime && body.endTime) {
+      const [sh, sm] = body.startTime.split(':').map(Number);
+      const [eh, em] = body.endTime.split(':').map(Number);
+      newDuration = Math.round(((eh * 60 + em) - (sh * 60 + sm)) / 60 * 10) / 10;
+      if (newDuration <= 0) return errorResponse('End time must be after start time', 400);
+
+      const diff = newDuration - existing.duration;
+      const remaining = database.permission.monthlyAllowance - database.permission.totalHoursUsed;
+      if (diff > remaining) return errorResponse(`Insufficient permission hours. Only ${remaining}h remaining.`, 400);
+
+      database.permission.totalHoursUsed += diff;
+    }
+
+    database.permission.requests[index] = {
+      ...existing,
+      date: body.date || existing.date,
+      startTime: body.startTime || existing.startTime,
+      endTime: body.endTime || existing.endTime,
+      duration: newDuration,
+      reason: body.reason !== undefined ? body.reason : existing.reason,
+    };
+
+    await saveDB(database);
+    return jsonResponse({ request: database.permission.requests[index] });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to update permission request', 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAuth(request);
+    const params = getQueryParams(request);
+    const id = parseInt(params.get('id') || '0');
+
+    if (!id) return errorResponse('Permission request ID is required', 400);
+
+    const database = await getDB();
+    const index = database.permission.requests.findIndex((r: { id: number }) => r.id === id);
+
+    if (index === -1) return errorResponse('Permission request not found', 404);
+
+    const deleted = database.permission.requests[index];
+
+    if (deleted.status === 'approved' || deleted.status === 'pending') {
+      database.permission.totalHoursUsed = Math.max(0, database.permission.totalHoursUsed - deleted.duration);
+    }
+
+    database.permission.requests.splice(index, 1);
+    await saveDB(database);
+
+    return jsonResponse({ message: 'Permission request deleted', request: deleted });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to delete permission request', 500);
   }
 }

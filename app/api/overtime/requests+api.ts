@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
-import { getDB, saveDB, generateId } from '../../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../utils/auth';
+import { getDB, saveDB, generateId } from '../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -74,5 +74,82 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create overtime request', 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireAuth(request);
+    const body = await parseBody(request);
+
+    if (!body.id) return errorResponse('Overtime request ID is required', 400);
+
+    const database = await getDB();
+    const index = database.overtime.requests.findIndex((r: { id: number }) => r.id === body.id);
+
+    if (index === -1) return errorResponse('Overtime request not found', 404);
+
+    const existing = database.overtime.requests[index];
+
+    if (existing.status !== 'pending') {
+      return errorResponse('Cannot update an overtime request that is not pending', 400);
+    }
+
+    let newDuration = existing.duration;
+    if (body.startTime && body.endTime) {
+      const [sh, sm] = body.startTime.split(':').map(Number);
+      const [eh, em] = body.endTime.split(':').map(Number);
+      newDuration = Math.round(((eh * 60 + em) - (sh * 60 + sm)) / 60 * 10) / 10;
+      if (newDuration <= 0) return errorResponse('End time must be after start time', 400);
+
+      const diff = newDuration - existing.duration;
+      database.overtime.totalPending += diff;
+    }
+
+    database.overtime.requests[index] = {
+      ...existing,
+      date: body.date || existing.date,
+      startTime: body.startTime || existing.startTime,
+      endTime: body.endTime || existing.endTime,
+      duration: newDuration,
+      reason: body.reason !== undefined ? body.reason : existing.reason,
+    };
+
+    await saveDB(database);
+    return jsonResponse({ request: database.overtime.requests[index] });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to update overtime request', 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAuth(request);
+    const params = getQueryParams(request);
+    const id = parseInt(params.get('id') || '0');
+
+    if (!id) return errorResponse('Overtime request ID is required', 400);
+
+    const database = await getDB();
+    const index = database.overtime.requests.findIndex((r: { id: number }) => r.id === id);
+
+    if (index === -1) return errorResponse('Overtime request not found', 404);
+
+    const deleted = database.overtime.requests[index];
+
+    if (deleted.status === 'pending') {
+      database.overtime.totalPending = Math.max(0, database.overtime.totalPending - deleted.duration);
+    } else if (deleted.status === 'approved') {
+      database.overtime.totalApproved = Math.max(0, database.overtime.totalApproved - deleted.duration);
+    }
+
+    database.overtime.requests.splice(index, 1);
+    await saveDB(database);
+
+    return jsonResponse({ message: 'Overtime request deleted', request: deleted });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to delete overtime request', 500);
   }
 }

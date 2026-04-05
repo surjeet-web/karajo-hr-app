@@ -38,7 +38,13 @@ export const PermissionReviewScreen: React.FC<any> = ({ navigation, route }) => 
     }
   };
 
+  const isExistingRequest = !!request?.status;
+
   const handleConfirm = (): void => {
+    if (isExistingRequest) {
+      navigation.goBack();
+      return;
+    }
     hapticFeedback('heavy');
     Alert.alert(
       'Confirm Permission Request',
@@ -148,11 +154,18 @@ export const PermissionReviewScreen: React.FC<any> = ({ navigation, route }) => 
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          title="Submit Permission Request"
-          onPress={handleConfirm}
-          accessibilityLabel="Submit permission request"
-        />
+        {isExistingRequest ? (
+          <Button
+            title="Back to Requests"
+            onPress={() => navigation.goBack()}
+            variant="outline"
+          />
+        ) : (
+          <Button
+            title="Submit Permission Request"
+            onPress={handleConfirm}
+          />
+        )}
       </View>
     </View>
   );

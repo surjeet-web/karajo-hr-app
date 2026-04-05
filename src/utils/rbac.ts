@@ -1,53 +1,104 @@
-export type RoleId = 'ceo' | 'hr_manager' | 'hr_specialist' | 'finance_mgr' | 'accountant' | 'manager' | 'team_lead' | 'employee';
+// ============================================
+// RBAC — Role-Based Access Control
+// ============================================
+
+export type RoleId = 'ceo' | 'hr_manager' | 'hr_specialist' | 'recruiter' | 'finance_mgr' | 'accountant' | 'manager' | 'team_lead' | 'employee';
+
 export type PermissionKey =
-  | 'employee:profile:read' | 'employee:profile:update' | 'employee:attendance:read' | 'employee:attendance:checkin'
-  | 'employee:attendance:correction' | 'employee:leave:read' | 'employee:leave:request' | 'employee:leave:cancel'
-  | 'employee:permission:read' | 'employee:permission:request' | 'employee:overtime:read' | 'employee:overtime:request'
-  | 'employee:activity:read' | 'employee:activity:create' | 'employee:activity:update' | 'employee:timesheet:read'
-  | 'employee:timesheet:submit' | 'employee:payslip:read' | 'employee:expense:read' | 'employee:expense:request'
-  | 'employee:notification:read' | 'employee:penalty:read' | 'employee:penalty:appeal' | 'employee:directory:read'
-  | 'employee:performance:read' | 'employee:performance:review' | 'employee:ai:use'
-  | 'team:attendance:read' | 'team:leave:read' | 'team:leave:approve' | 'team:permission:read' | 'team:permission:approve'
-  | 'team:overtime:read' | 'team:overtime:approve' | 'team:expense:read' | 'team:expense:approve'
-  | 'team:performance:read' | 'team:performance:review' | 'team:goals:manage' | 'team:planning:read'
+  // Employee domain
+  | 'employee:profile:read' | 'employee:profile:update'
+  | 'employee:attendance:read' | 'employee:attendance:checkin' | 'employee:attendance:correction'
+  | 'employee:leave:read' | 'employee:leave:request' | 'employee:leave:cancel'
+  | 'employee:permission:read' | 'employee:permission:request'
+  | 'employee:overtime:read' | 'employee:overtime:request'
+  | 'employee:activity:read' | 'employee:activity:create' | 'employee:activity:update'
+  | 'employee:timesheet:read' | 'employee:timesheet:submit'
+  | 'employee:payslip:read' | 'employee:expense:read' | 'employee:expense:request'
+  | 'employee:notification:read'
+  | 'employee:penalty:read' | 'employee:penalty:appeal'
+  | 'employee:directory:read'
+  | 'employee:performance:read' | 'employee:performance:review'
+  | 'employee:ai:use'
+  // Team domain
+  | 'team:attendance:read' | 'team:leave:read' | 'team:leave:approve'
+  | 'team:permission:read' | 'team:permission:approve'
+  | 'team:overtime:read' | 'team:overtime:approve'
+  | 'team:expense:read' | 'team:expense:approve'
+  | 'team:performance:read' | 'team:performance:review'
+  | 'team:goals:manage' | 'team:planning:read'
   | 'team:all:manage' | 'team:cross-department:read' | 'team:cross-department:approve'
+  // HR domain
   | 'hr:employee:read' | 'hr:employee:create' | 'hr:employee:update' | 'hr:employee:deactivate'
   | 'hr:attendance:read' | 'hr:attendance:manage' | 'hr:attendance:correction:approve'
   | 'hr:leave:read' | 'hr:leave:approve' | 'hr:leave:policy:manage'
-  | 'hr:permission:read' | 'hr:permission:approve' | 'hr:overtime:read' | 'hr:overtime:approve'
+  | 'hr:permission:read' | 'hr:permission:approve'
+  | 'hr:overtime:read' | 'hr:overtime:approve'
   | 'hr:onboarding:manage' | 'hr:offboarding:manage' | 'hr:policy:manage'
-  | 'hr:compliance:read' | 'hr:compliance:manage' | 'hr:reports:read' | 'hr:reports:export'
-  | 'hr:bulk:actions' | 'hr:department:read' | 'hr:department:manage' | 'hr:analytics:read' | 'hr:role:manage'
+  | 'hr:compliance:read' | 'hr:compliance:manage'
+  | 'hr:reports:read' | 'hr:reports:export'
+  | 'hr:bulk:actions'
+  | 'hr:department:read' | 'hr:department:manage'
+  | 'hr:analytics:read' | 'hr:role:manage'
+  // Recruiter domain
+  | 'recruiter:candidates:read' | 'recruiter:candidates:manage'
+  | 'recruiter:jobs:read' | 'recruiter:jobs:manage'
+  | 'recruiter:interviews:read' | 'recruiter:interviews:manage'
+  | 'recruiter:offers:read' | 'recruiter:offers:manage'
+  // Finance domain
   | 'finance:payroll:read' | 'finance:payroll:process' | 'finance:payroll:approve'
   | 'finance:expense:read' | 'finance:expense:approve' | 'finance:expense:manage'
-  | 'finance:budget:read' | 'finance:budget:manage' | 'finance:tax:read' | 'finance:tax:manage'
-  | 'finance:audit:read' | 'finance:reports:read' | 'finance:reports:export' | 'finance:employee:financial:read'
-  | 'ceo:dashboard:read' | 'ceo:analytics:read' | 'ceo:department:read' | 'ceo:department:manage'
-  | 'ceo:goals:read' | 'ceo:goals:manage' | 'ceo:workforce:read' | 'ceo:workforce:manage'
-  | 'ceo:reports:read' | 'ceo:reports:export' | 'ceo:approvals:high' | 'ceo:policy:approve'
+  | 'finance:budget:read' | 'finance:budget:manage'
+  | 'finance:tax:read' | 'finance:tax:manage'
+  | 'finance:audit:read'
+  | 'finance:reports:read' | 'finance:reports:export'
+  | 'finance:employee:financial:read'
+  // CEO domain
+  | 'ceo:dashboard:read' | 'ceo:analytics:read'
+  | 'ceo:department:read' | 'ceo:department:manage'
+  | 'ceo:goals:read' | 'ceo:goals:manage'
+  | 'ceo:workforce:read' | 'ceo:workforce:manage'
+  | 'ceo:reports:read' | 'ceo:reports:export'
+  | 'ceo:approvals:high' | 'ceo:policy:approve'
   | 'ceo:all:read' | 'ceo:all:manage';
+
 export type ScreenKey =
-  | 'HomeMain' | 'CheckedOut' | 'Shortcuts' | 'Notifications' | 'AIChat' | 'AIChatExpanded' | 'AIChatConversation'
-  | 'DocumentView' | 'ActivityList' | 'AddActivity' | 'EditActivity' | 'ActivityDetail' | 'TimesheetWeekly'
-  | 'TimesheetMonthly' | 'SubmitConfirmation' | 'TimesheetSubmitted' | 'ApprovalStatus' | 'RevisionRequested'
+  // Employee screens
+  | 'HomeMain' | 'CheckedOut' | 'Shortcuts' | 'Notifications'
+  | 'AIChat' | 'AIChatExpanded' | 'AIChatConversation' | 'DocumentView'
+  | 'ActivityList' | 'ActivityFilter' | 'AddActivity' | 'EditActivity' | 'ActivityDetail'
+  | 'TimesheetWeekly' | 'TimesheetMonthly' | 'SubmitConfirmation' | 'TimesheetSubmitted' | 'ApprovalStatus' | 'RevisionRequested'
   | 'AttendanceLocation' | 'FaceValidation' | 'QRValidation' | 'AttendanceSuccess' | 'AttendanceHistory'
-  | 'AttendanceFilter' | 'MonthlySummary' | 'AttendanceDetail' | 'AttendanceCalendar' | 'CorrectionReason'
-  | 'CorrectionForm' | 'CorrectionSummary' | 'CorrectionSubmitted' | 'LeaveHome' | 'LeaveHistory'
-  | 'SelectLeaveType' | 'SelectDates' | 'SelectDelegate' | 'UploadDocument' | 'LeaveReview' | 'LeaveSuccess'
-  | 'PermissionHome' | 'PermissionRequest' | 'PermissionReview' | 'PermissionSuccess' | 'OvertimeHome'
-  | 'OvertimeSuccess' | 'PayslipHome' | 'ExpenseOverview' | 'ExpenseDetail' | 'Profile' | 'PenaltyHome'
-  | 'PenaltyDetail' | 'PenaltyAppeal' | 'PenaltyReview' | 'PenaltySuccess' | 'EmployeeDirectory' | 'EmployeeDetail'
-  | 'OrgChart' | 'Onboarding' | 'PerformanceDashboard' | 'KPITracking' | 'PerformanceReview' | 'GoalSetting'
-  | 'Feedback360' | 'HRDashboard' | 'HRApprovalCenter' | 'HRApprovalDetail' | 'HREmployeeManagement'
-  | 'HREmployeeProfile' | 'HRAttendanceManagement' | 'HRLeaveManagement' | 'HRReports' | 'HRReportDetail'
-  | 'HRSettings' | 'HRAnalytics' | 'HRBulkActions' | 'HRCompliance' | 'HROnboardingManagement' | 'HROffboarding'
-  | 'HRPolicyManagement' | 'FinanceDashboard' | 'FinanceEmployee' | 'PayrollManagement' | 'PayrollDetail'
-  | 'PayrollHistory' | 'FinanceExpenseManagement' | 'FinanceBudget' | 'FinanceTax' | 'FinanceAudit'
-  | 'FinanceReports' | 'FinanceReportDetail' | 'FinanceSettings' | 'ManagerDashboard' | 'MyTeam'
-  | 'ManagerApproval' | 'ManagerApprovalDetail' | 'TeamAttendance' | 'TeamPlanning' | 'TeamReports'
-  | 'TeamPerformance' | 'TeamGoals' | 'CEODashboard' | 'CEOAnalytics' | 'DepartmentOverview'
-  | 'DepartmentDetail' | 'CompanyGoals' | 'WorkforcePlanning' | 'CEOReports';
+  | 'AttendanceFilter' | 'MonthlySummary' | 'AttendanceDetail' | 'AttendanceCalendar'
+  | 'CorrectionReason' | 'CorrectionForm' | 'CorrectionSummary' | 'CorrectionSubmitted'
+  | 'LeaveHome' | 'LeaveHistory' | 'SelectLeaveType' | 'SelectDates' | 'SelectDelegate' | 'UploadDocument' | 'LeaveReview' | 'LeaveSuccess'
+  | 'PermissionHome' | 'PermissionRequest' | 'PermissionReview' | 'PermissionSuccess'
+  | 'OvertimeHome' | 'OvertimeRequest' | 'OvertimeReview' | 'OvertimeSuccess'
+  | 'PayslipHome' | 'PayslipDetail' | 'ExpenseOverview' | 'ExpenseDetail'
+  | 'Profile' | 'PersonalInfo' | 'IdentityVerification' | 'EmploymentInfo'
+  | 'PenaltyHome' | 'PenaltyDetail' | 'PenaltyAppeal' | 'PenaltyReview' | 'PenaltySuccess'
+  | 'EmployeeDirectory' | 'EmployeeDetail' | 'OrgChart' | 'Onboarding'
+  | 'PerformanceDashboard' | 'KPITracking' | 'PerformanceReview' | 'GoalSetting' | 'Feedback360'
+  // HR screens
+  | 'HRDashboard' | 'HRApprovalCenter' | 'HRApprovalDetail' | 'HREmployeeManagement' | 'HREmployeeProfile'
+  | 'HRAttendanceManagement' | 'HRLeaveManagement' | 'HRReports' | 'HRReportDetail' | 'HRSettings'
+  | 'HRAnalytics' | 'HRBulkActions' | 'HRCompliance' | 'HROnboardingManagement' | 'HROffboarding' | 'HRPolicyManagement'
+  // Finance screens
+  | 'FinanceDashboard' | 'FinanceEmployee' | 'PayrollManagement' | 'PayrollDetail' | 'PayrollHistory'
+  | 'FinanceExpenseManagement' | 'FinanceBudget' | 'FinanceTax' | 'FinanceAudit'
+  | 'FinanceReports' | 'FinanceReportDetail' | 'FinanceSettings'
+  // Manager screens
+  | 'ManagerDashboard' | 'MyTeam' | 'ManagerApproval' | 'ManagerApprovalDetail'
+  | 'TeamAttendance' | 'TeamPlanning' | 'TeamReports' | 'TeamPerformance' | 'TeamGoals'
+  // CEO screens
+  | 'CEODashboard' | 'CEOAnalytics' | 'DepartmentOverview' | 'DepartmentDetail'
+  | 'CompanyGoals' | 'WorkforcePlanning' | 'CEOReports';
+
 export type DepartmentAccessType = 'own' | 'all' | 'none';
+export type RequestType = 'leave' | 'permission' | 'overtime' | 'expense' | 'payroll';
+
+// ============================================
+// Type definitions
+// ============================================
 
 export interface RoleConfig {
   level: number;
@@ -56,10 +107,7 @@ export interface RoleConfig {
 }
 
 export type RoleHierarchy = Record<RoleId, RoleConfig>;
-
-export type PermissionDescription = string;
-export type PermissionsMap = Record<PermissionKey, PermissionDescription>;
-
+export type PermissionsMap = Record<PermissionKey, string>;
 export type RolePermissions = Record<RoleId, PermissionKey[]>;
 export type ScreenPermissions = Record<ScreenKey, PermissionKey[]>;
 
@@ -71,11 +119,11 @@ export interface ApprovalLimitConfig {
   escalateTo?: RoleId | null;
 }
 
-export type ApprovalLimits = Partial<Record<RoleId, Record<string, ApprovalLimitConfig>>>;
-
+export type ApprovalLimits = Record<RoleId, Partial<Record<RequestType, ApprovalLimitConfig>>>;
 export type DepartmentAccess = Record<RoleId, DepartmentAccessType>;
 
 export interface EmployeeFeatures {
+  // Employee base
   canCheckIn?: boolean;
   canRequestLeave?: boolean;
   canRequestPermission?: boolean;
@@ -87,6 +135,7 @@ export interface EmployeeFeatures {
   canViewDirectory?: boolean;
   canWriteReview?: boolean;
   canAppealPenalty?: boolean;
+  // Team lead / manager
   canApproveTeamRequests?: boolean;
   canViewTeamAttendance?: boolean;
   canViewTeamPerformance?: boolean;
@@ -99,6 +148,7 @@ export interface EmployeeFeatures {
   canManageAllTeams?: boolean;
   canViewAllDepartments?: boolean;
   canCrossDepartmentApprove?: boolean;
+  // HR
   canManageEmployees?: boolean;
   canApproveLeave?: boolean;
   canManageOnboarding?: boolean;
@@ -112,6 +162,12 @@ export interface EmployeeFeatures {
   canViewAnalytics?: boolean;
   canManageRoles?: boolean;
   canPerformBulkActions?: boolean;
+  // Recruiter
+  canManageCandidates?: boolean;
+  canManageJobs?: boolean;
+  canManageInterviews?: boolean;
+  canManageOffers?: boolean;
+  // Finance
   canViewPayroll?: boolean;
   canApproveExpenses?: boolean;
   canViewBudgets?: boolean;
@@ -124,6 +180,7 @@ export interface EmployeeFeatures {
   canViewFinancialReports?: boolean;
   canExportReports?: boolean;
   canViewEmployeeFinancials?: boolean;
+  // CEO
   canViewAllData?: boolean;
   canManageAllData?: boolean;
   canApproveHighValue?: boolean;
@@ -134,6 +191,12 @@ export interface EmployeeFeatures {
 
 export type RoleFeatures = Record<RoleId, EmployeeFeatures>;
 
+// ============================================
+// ROLE HIERARCHY
+// FIX: hr_specialist no longer inherits team_lead (HR ≠ line management)
+// FIX: recruiter inherits only employee (correct)
+// ============================================
+
 export const ROLE_HIERARCHY: RoleHierarchy = {
   ceo: {
     level: 6,
@@ -143,12 +206,17 @@ export const ROLE_HIERARCHY: RoleHierarchy = {
   hr_manager: {
     level: 5,
     label: 'HR Manager',
-    inherits: ['hr_specialist', 'team_lead', 'employee'],
+    inherits: ['hr_specialist', 'employee'],
   },
   hr_specialist: {
     level: 4,
     label: 'HR Specialist',
-    inherits: ['team_lead', 'employee'],
+    inherits: ['employee'],
+  },
+  recruiter: {
+    level: 3,
+    label: 'Recruiter',
+    inherits: ['employee'],
   },
   finance_mgr: {
     level: 5,
@@ -177,7 +245,13 @@ export const ROLE_HIERARCHY: RoleHierarchy = {
   },
 };
 
+// ============================================
+// PERMISSION DESCRIPTIONS
+// Added recruiter domain permissions
+// ============================================
+
 export const PERMISSIONS: PermissionsMap = {
+  // Employee
   'employee:profile:read': 'View own profile',
   'employee:profile:update': 'Update own profile',
   'employee:attendance:read': 'View own attendance',
@@ -206,6 +280,7 @@ export const PERMISSIONS: PermissionsMap = {
   'employee:performance:review': 'Write peer review',
   'employee:ai:use': 'Use Karajo AI assistant',
 
+  // Team
   'team:attendance:read': 'View team attendance',
   'team:leave:read': 'View team leave requests',
   'team:leave:approve': 'Approve team leave (up to 3 days)',
@@ -223,6 +298,7 @@ export const PERMISSIONS: PermissionsMap = {
   'team:cross-department:read': 'View all teams across departments',
   'team:cross-department:approve': 'Approve requests from all teams',
 
+  // HR
   'hr:employee:read': 'View all employees',
   'hr:employee:create': 'Add new employees',
   'hr:employee:update': 'Update employee details',
@@ -250,6 +326,17 @@ export const PERMISSIONS: PermissionsMap = {
   'hr:analytics:read': 'View HR analytics',
   'hr:role:manage': 'Manage user roles',
 
+  // Recruiter
+  'recruiter:candidates:read': 'View candidates',
+  'recruiter:candidates:manage': 'Manage candidates',
+  'recruiter:jobs:read': 'View job postings',
+  'recruiter:jobs:manage': 'Manage job postings',
+  'recruiter:interviews:read': 'View interviews',
+  'recruiter:interviews:manage': 'Schedule interviews',
+  'recruiter:offers:read': 'View offers',
+  'recruiter:offers:manage': 'Manage offer letters',
+
+  // Finance
   'finance:payroll:read': 'View payroll data',
   'finance:payroll:process': 'Process payroll',
   'finance:payroll:approve': 'Approve payroll runs',
@@ -265,6 +352,7 @@ export const PERMISSIONS: PermissionsMap = {
   'finance:reports:export': 'Export finance reports',
   'finance:employee:financial:read': 'View employee financial data',
 
+  // CEO
   'ceo:dashboard:read': 'View CEO dashboard',
   'ceo:analytics:read': 'View company analytics',
   'ceo:department:read': 'View all departments',
@@ -280,6 +368,16 @@ export const PERMISSIONS: PermissionsMap = {
   'ceo:all:read': 'Read access to all data',
   'ceo:all:manage': 'Manage all company data',
 };
+
+// ============================================
+// ROLE PERMISSIONS
+// FIX: Removed duplicate permissions from manager (already gets team:* via team_lead inheritance)
+// FIX: Removed duplicate permissions from hr_manager (already gets hr:* via hr_specialist inheritance)
+// FIX: Added hr:department:read to hr_specialist
+// FIX: Added hr:reports:export to hr_manager explicitly
+// FIX: Added recruiter-specific permissions
+// FIX: Added accountant approval limits
+// ============================================
 
 export const ROLE_PERMISSIONS: RolePermissions = {
   employee: [
@@ -326,26 +424,15 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     'team:goals:manage',
     'team:planning:read',
   ],
+  // manager inherits team_lead + employee → only add manager-specific permissions
   manager: [
-    'team:attendance:read',
-    'team:leave:read',
-    'team:leave:approve',
-    'team:permission:read',
-    'team:permission:approve',
-    'team:overtime:read',
-    'team:overtime:approve',
-    'team:expense:read',
-    'team:expense:approve',
-    'team:performance:read',
-    'team:performance:review',
-    'team:goals:manage',
-    'team:planning:read',
     'hr:employee:read',
     'hr:department:read',
     'team:all:manage',
     'team:cross-department:read',
     'team:cross-department:approve',
   ],
+  // hr_specialist inherits employee → only add HR-specific permissions
   hr_specialist: [
     'hr:employee:read',
     'hr:attendance:read',
@@ -362,36 +449,37 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     'hr:compliance:read',
     'hr:reports:read',
     'hr:reports:export',
+    'hr:department:read',
     'hr:analytics:read',
   ],
+  // hr_manager inherits hr_specialist + employee → only add manager-level HR permissions
   hr_manager: [
-    'hr:employee:read',
     'hr:employee:create',
     'hr:employee:update',
     'hr:employee:deactivate',
-    'hr:attendance:read',
     'hr:attendance:manage',
-    'hr:attendance:correction:approve',
-    'hr:leave:read',
-    'hr:leave:approve',
     'hr:leave:policy:manage',
-    'hr:permission:read',
-    'hr:permission:approve',
-    'hr:overtime:read',
-    'hr:overtime:approve',
-    'hr:onboarding:manage',
-    'hr:offboarding:manage',
-    'hr:policy:manage',
-    'hr:compliance:read',
     'hr:compliance:manage',
-    'hr:reports:read',
     'hr:reports:export',
     'hr:bulk:actions',
-    'hr:department:read',
     'hr:department:manage',
-    'hr:analytics:read',
     'hr:role:manage',
   ],
+  // Recruiter inherits employee → add recruiter-specific permissions
+  recruiter: [
+    'hr:employee:read',
+    'hr:onboarding:manage',
+    'hr:reports:read',
+    'recruiter:candidates:read',
+    'recruiter:candidates:manage',
+    'recruiter:jobs:read',
+    'recruiter:jobs:manage',
+    'recruiter:interviews:read',
+    'recruiter:interviews:manage',
+    'recruiter:offers:read',
+    'recruiter:offers:manage',
+  ],
+  // accountant inherits employee → add finance-specific permissions
   accountant: [
     'finance:payroll:read',
     'finance:expense:read',
@@ -402,22 +490,16 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     'finance:reports:read',
     'finance:reports:export',
   ],
+  // finance_mgr inherits accountant + employee → add manager-level finance permissions
   finance_mgr: [
-    'finance:payroll:read',
     'finance:payroll:process',
     'finance:payroll:approve',
-    'finance:expense:read',
-    'finance:expense:approve',
     'finance:expense:manage',
-    'finance:budget:read',
     'finance:budget:manage',
-    'finance:tax:read',
     'finance:tax:manage',
-    'finance:audit:read',
-    'finance:reports:read',
-    'finance:reports:export',
     'finance:employee:financial:read',
   ],
+  // ceo inherits hr_manager + finance_mgr + manager + team_lead + employee → only add CEO-specific
   ceo: [
     'ceo:dashboard:read',
     'ceo:analytics:read',
@@ -436,7 +518,15 @@ export const ROLE_PERMISSIONS: RolePermissions = {
   ],
 };
 
+// ============================================
+// SCREEN PERMISSIONS
+// FIX: Added all missing screens (OvertimeRequest, OvertimeReview, ActivityFilter, etc.)
+// FIX: Fixed Onboarding → hr:onboarding:manage
+// FIX: Fixed OvertimeSuccess → employee:overtime:read
+// ============================================
+
 export const SCREEN_PERMISSIONS: ScreenPermissions = {
+  // Employee screens
   HomeMain: ['employee:attendance:read'],
   CheckedOut: ['employee:attendance:read'],
   Shortcuts: ['employee:profile:read'],
@@ -446,6 +536,7 @@ export const SCREEN_PERMISSIONS: ScreenPermissions = {
   AIChatConversation: ['employee:ai:use'],
   DocumentView: ['employee:ai:use'],
   ActivityList: ['employee:activity:read'],
+  ActivityFilter: ['employee:activity:read'],
   AddActivity: ['employee:activity:create'],
   EditActivity: ['employee:activity:update'],
   ActivityDetail: ['employee:activity:read'],
@@ -475,32 +566,39 @@ export const SCREEN_PERMISSIONS: ScreenPermissions = {
   SelectDelegate: ['employee:leave:request'],
   UploadDocument: ['employee:leave:request'],
   LeaveReview: ['employee:leave:request'],
-  LeaveSuccess: ['employee:leave:request'],
+  LeaveSuccess: ['employee:leave:read'],
   PermissionHome: ['employee:permission:read'],
   PermissionRequest: ['employee:permission:request'],
   PermissionReview: ['employee:permission:request'],
-  PermissionSuccess: ['employee:permission:request'],
+  PermissionSuccess: ['employee:permission:read'],
   OvertimeHome: ['employee:overtime:read'],
-  OvertimeSuccess: ['employee:overtime:request'],
+  OvertimeRequest: ['employee:overtime:request'],
+  OvertimeReview: ['employee:overtime:request'],
+  OvertimeSuccess: ['employee:overtime:read'],
   PayslipHome: ['employee:payslip:read'],
+  PayslipDetail: ['employee:payslip:read'],
   ExpenseOverview: ['employee:expense:read'],
   ExpenseDetail: ['employee:expense:read'],
   Profile: ['employee:profile:read'],
+  PersonalInfo: ['employee:profile:read'],
+  IdentityVerification: ['employee:profile:read'],
+  EmploymentInfo: ['employee:profile:read'],
   PenaltyHome: ['employee:penalty:read'],
   PenaltyDetail: ['employee:penalty:read'],
   PenaltyAppeal: ['employee:penalty:appeal'],
   PenaltyReview: ['employee:penalty:appeal'],
-  PenaltySuccess: ['employee:penalty:appeal'],
+  PenaltySuccess: ['employee:penalty:read'],
   EmployeeDirectory: ['employee:directory:read'],
   EmployeeDetail: ['employee:directory:read'],
   OrgChart: ['employee:directory:read'],
-  Onboarding: ['employee:directory:read'],
+  Onboarding: ['hr:onboarding:manage'],
   PerformanceDashboard: ['employee:performance:read'],
   KPITracking: ['employee:performance:read'],
   PerformanceReview: ['employee:performance:review'],
   GoalSetting: ['employee:performance:read'],
   Feedback360: ['employee:performance:review'],
 
+  // HR screens
   HRDashboard: ['hr:employee:read'],
   HRApprovalCenter: ['hr:leave:approve'],
   HRApprovalDetail: ['hr:leave:approve'],
@@ -518,6 +616,7 @@ export const SCREEN_PERMISSIONS: ScreenPermissions = {
   HROffboarding: ['hr:offboarding:manage'],
   HRPolicyManagement: ['hr:policy:manage'],
 
+  // Finance screens
   FinanceDashboard: ['finance:payroll:read'],
   FinanceEmployee: ['finance:employee:financial:read'],
   PayrollManagement: ['finance:payroll:read'],
@@ -531,6 +630,7 @@ export const SCREEN_PERMISSIONS: ScreenPermissions = {
   FinanceReportDetail: ['finance:reports:read'],
   FinanceSettings: ['finance:payroll:read'],
 
+  // Manager screens
   ManagerDashboard: ['team:attendance:read'],
   MyTeam: ['team:attendance:read'],
   ManagerApproval: ['team:leave:approve'],
@@ -541,6 +641,7 @@ export const SCREEN_PERMISSIONS: ScreenPermissions = {
   TeamPerformance: ['team:performance:read'],
   TeamGoals: ['team:goals:manage'],
 
+  // CEO screens
   CEODashboard: ['ceo:dashboard:read'],
   CEOAnalytics: ['ceo:analytics:read'],
   DepartmentOverview: ['ceo:department:read'],
@@ -549,6 +650,13 @@ export const SCREEN_PERMISSIONS: ScreenPermissions = {
   WorkforcePlanning: ['ceo:workforce:read'],
   CEOReports: ['ceo:reports:read'],
 };
+
+// ============================================
+// APPROVAL LIMITS
+// FIX: Added accountant limits
+// FIX: Added hr_specialist limits
+// FIX: Added recruiter limits (none — recruiters cannot approve)
+// ============================================
 
 export const APPROVAL_LIMITS: ApprovalLimits = {
   team_lead: {
@@ -563,11 +671,20 @@ export const APPROVAL_LIMITS: ApprovalLimits = {
     overtime: { maxHoursPerMonth: 20, escalateTo: 'hr_manager' },
     expense: { maxAmount: 2000, escalateTo: 'finance_mgr' },
   },
+  hr_specialist: {
+    leave: { maxDays: 5, escalateTo: 'hr_manager' },
+    permission: { maxHours: 4, escalateTo: 'hr_manager' },
+    overtime: { maxHoursPerMonth: 15, escalateTo: 'hr_manager' },
+  },
   hr_manager: {
     leave: { maxDays: 30, escalateTo: 'ceo' },
     permission: { maxHours: 40, escalateTo: 'ceo' },
     overtime: { maxHoursPerMonth: 50, escalateTo: 'ceo' },
     expense: { maxAmount: 5000, escalateTo: 'ceo' },
+  },
+  accountant: {
+    expense: { maxAmount: 1000, escalateTo: 'finance_mgr' },
+    payroll: { maxAmount: 50000, escalateTo: 'finance_mgr' },
   },
   finance_mgr: {
     expense: { maxAmount: 10000, escalateTo: 'ceo' },
@@ -580,7 +697,15 @@ export const APPROVAL_LIMITS: ApprovalLimits = {
     expense: { maxAmount: Infinity },
     payroll: { maxAmount: Infinity },
   },
+  // employee, team_lead, recruiter have no approval limits by default
+  employee: {},
+  recruiter: {},
 };
+
+// ============================================
+// DEPARTMENT ACCESS
+// FIX: recruiter → 'all' (needs to see candidates across departments)
+// ============================================
 
 export const DEPARTMENT_ACCESS: DepartmentAccess = {
   employee: 'own',
@@ -588,33 +713,52 @@ export const DEPARTMENT_ACCESS: DepartmentAccess = {
   manager: 'all',
   hr_specialist: 'all',
   hr_manager: 'all',
+  recruiter: 'all',
   accountant: 'all',
   finance_mgr: 'all',
   ceo: 'all',
 };
 
+// ============================================
+// ROLE FEATURES
+// FIX: Now includes inherited features for each role
+// FIX: Added recruiter features
+// FIX: Added accountant employee features
+// ============================================
+
+const EMPLOYEE_FEATURES: EmployeeFeatures = {
+  canCheckIn: true,
+  canRequestLeave: true,
+  canRequestPermission: true,
+  canRequestOvertime: true,
+  canSubmitTimesheet: true,
+  canRequestExpense: true,
+  canViewPayslip: true,
+  canUseAI: true,
+  canViewDirectory: true,
+  canWriteReview: true,
+  canAppealPenalty: true,
+};
+
 export const ROLE_FEATURES: RoleFeatures = {
-  employee: {
-    canCheckIn: true,
-    canRequestLeave: true,
-    canRequestPermission: true,
-    canRequestOvertime: true,
-    canSubmitTimesheet: true,
-    canRequestExpense: true,
-    canViewPayslip: true,
-    canUseAI: true,
-    canViewDirectory: true,
-    canWriteReview: true,
-    canAppealPenalty: true,
-  },
+  employee: { ...EMPLOYEE_FEATURES },
+
   team_lead: {
+    ...EMPLOYEE_FEATURES,
     canApproveTeamRequests: true,
     canViewTeamAttendance: true,
     canViewTeamPerformance: true,
     canManageTeamGoals: true,
     canWriteTeamReviews: true,
   },
+
   manager: {
+    ...EMPLOYEE_FEATURES,
+    canApproveTeamRequests: true,
+    canViewTeamAttendance: true,
+    canViewTeamPerformance: true,
+    canManageTeamGoals: true,
+    canWriteTeamReviews: true,
     canApproveAllTeamRequests: true,
     canViewDepartmentData: true,
     canManageDepartmentGoals: true,
@@ -623,14 +767,23 @@ export const ROLE_FEATURES: RoleFeatures = {
     canViewAllDepartments: true,
     canCrossDepartmentApprove: true,
   },
+
   hr_specialist: {
+    ...EMPLOYEE_FEATURES,
     canManageEmployees: true,
     canApproveLeave: true,
     canManageOnboarding: true,
     canManageOffboarding: true,
     canViewReports: true,
   },
+
   hr_manager: {
+    ...EMPLOYEE_FEATURES,
+    canManageEmployees: true,
+    canApproveLeave: true,
+    canManageOnboarding: true,
+    canManageOffboarding: true,
+    canViewReports: true,
     canManageAllEmployees: true,
     canCreateEmployees: true,
     canDeactivateEmployees: true,
@@ -640,14 +793,33 @@ export const ROLE_FEATURES: RoleFeatures = {
     canManageRoles: true,
     canPerformBulkActions: true,
   },
+
+  recruiter: {
+    ...EMPLOYEE_FEATURES,
+    canManageOnboarding: true,
+    canViewReports: true,
+    canManageCandidates: true,
+    canManageJobs: true,
+    canManageInterviews: true,
+    canManageOffers: true,
+  },
+
   accountant: {
+    ...EMPLOYEE_FEATURES,
     canViewPayroll: true,
     canApproveExpenses: true,
     canViewBudgets: true,
     canViewTaxData: true,
     canViewAuditTrail: true,
   },
+
   finance_mgr: {
+    ...EMPLOYEE_FEATURES,
+    canViewPayroll: true,
+    canApproveExpenses: true,
+    canViewBudgets: true,
+    canViewTaxData: true,
+    canViewAuditTrail: true,
     canProcessPayroll: true,
     canApprovePayroll: true,
     canManageBudgets: true,
@@ -656,7 +828,44 @@ export const ROLE_FEATURES: RoleFeatures = {
     canExportReports: true,
     canViewEmployeeFinancials: true,
   },
+
   ceo: {
+    ...EMPLOYEE_FEATURES,
+    canApproveTeamRequests: true,
+    canViewTeamAttendance: true,
+    canViewTeamPerformance: true,
+    canManageTeamGoals: true,
+    canWriteTeamReviews: true,
+    canApproveAllTeamRequests: true,
+    canViewDepartmentData: true,
+    canManageDepartmentGoals: true,
+    canViewDepartmentPerformance: true,
+    canManageAllTeams: true,
+    canViewAllDepartments: true,
+    canCrossDepartmentApprove: true,
+    canManageAllEmployees: true,
+    canCreateEmployees: true,
+    canDeactivateEmployees: true,
+    canManagePolicies: true,
+    canManageCompliance: true,
+    canViewAnalytics: true,
+    canManageRoles: true,
+    canPerformBulkActions: true,
+    canManageOnboarding: true,
+    canManageOffboarding: true,
+    canViewReports: true,
+    canViewPayroll: true,
+    canApproveExpenses: true,
+    canViewBudgets: true,
+    canViewTaxData: true,
+    canViewAuditTrail: true,
+    canProcessPayroll: true,
+    canApprovePayroll: true,
+    canManageBudgets: true,
+    canManageTax: true,
+    canViewFinancialReports: true,
+    canExportReports: true,
+    canViewEmployeeFinancials: true,
     canViewAllData: true,
     canManageAllData: true,
     canApproveHighValue: true,

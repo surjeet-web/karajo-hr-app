@@ -1,5 +1,5 @@
-import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../../../utils/auth';
-import { getDB, saveDB, generateId } from '../../../utils/db';
+import { requireAuth, jsonResponse, errorResponse, corsHeaders, getQueryParams, parseBody } from '../utils/auth';
+import { getDB, saveDB, generateId } from '../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });
@@ -83,5 +83,65 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Response) throw error;
     return errorResponse('Failed to create approval', 500);
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    await requireAuth(request);
+    const body = await parseBody(request);
+
+    if (!body.id) return errorResponse('Approval ID is required', 400);
+
+    const database = await getDB();
+    const index = (database.approvals || []).findIndex((a: { id: number }) => a.id === body.id);
+
+    if (index === -1) return errorResponse('Approval not found', 404);
+
+    const existing = database.approvals[index];
+
+    if (existing.status !== 'pending') {
+      return errorResponse('Cannot update an approval that is not pending', 400);
+    }
+
+    database.approvals[index] = {
+      ...existing,
+      type: body.type || existing.type,
+      requesterId: body.requesterId || existing.requesterId,
+      approverId: body.approverId || existing.approverId,
+      status: body.status || existing.status,
+      comment: body.comment || existing.comment,
+      escalationLevel: body.escalationLevel !== undefined ? body.escalationLevel : existing.escalationLevel,
+      data: body.data || existing.data,
+    };
+
+    await saveDB(database);
+    return jsonResponse({ approval: database.approvals[index] });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to update approval', 500);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireAuth(request);
+    const params = getQueryParams(request);
+    const id = parseInt(params.get('id') || '0');
+
+    if (!id) return errorResponse('Approval ID is required', 400);
+
+    const database = await getDB();
+    const index = (database.approvals || []).findIndex((a: { id: number }) => a.id === id);
+
+    if (index === -1) return errorResponse('Approval not found', 404);
+
+    const deleted = database.approvals.splice(index, 1)[0];
+    await saveDB(database);
+
+    return jsonResponse({ message: 'Approval deleted', approval: deleted });
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    return errorResponse('Failed to delete approval', 500);
   }
 }

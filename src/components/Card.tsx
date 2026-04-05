@@ -17,7 +17,7 @@ interface CardProps {
 export const Card = ({
   children,
   style = {},
-  onPress = null,
+  onPress,
   variant = 'default',
   padding = 'md',
 }: CardProps) => {

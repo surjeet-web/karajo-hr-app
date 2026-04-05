@@ -1,4 +1,4 @@
-import { getState, setState } from '../store';
+
 import {
   calculateTotalHours,
   calculateOvertime,
@@ -232,6 +232,9 @@ export const calculateEmployeePayroll = (
     totalWorkHours: Math.round(totalWorkHours * 100) / 100,
   };
 };
+
+const getState = (): any => require('../store').getState();
+const setState = (updater: any): void => require('../store').setState(updater);
 
 export const runPayroll = (month: number, year: number): PayrollRun => {
   const state = getState() as AppState;

@@ -10,11 +10,11 @@ import { Header, Button, ProgressBar } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
 import { submitCorrection } from '../../store';
 import { correctionReasons } from '../../data/mockData';
-import { attendanceService } from '../../services';
 
 export const CorrectionSummaryScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { selectedReason, checkInTime, checkOutTime, reason } = route?.params || {};
+  const { selectedReason, date, checkInTime, checkOutTime, reason } = route?.params || {};
+  const today = date || new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
   useEffect(() => { hapticFeedback('medium'); }, []);
 
@@ -23,24 +23,38 @@ export const CorrectionSummaryScreen: React.FC<any> = ({ navigation, route }) =>
 
   const handleSubmit = (): void => {
     hapticFeedback('heavy');
-    submitCorrection({
-      date: 'Monday, Feb 23, 2023',
-      reason: reasonLabel,
-      checkIn: checkInTime,
-      checkOut: checkOutTime,
-      details: displayReason,
-    });
-    navigation.navigate('CorrectionSubmitted', {
-      checkInTime,
-      checkOutTime,
-      reason: reasonLabel,
-    });
+    Alert.alert(
+      'Submit Correction',
+      `Submit attendance correction for ${today}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Submit',
+          onPress: () => {
+            submitCorrection({
+              date: today,
+              reason: reasonLabel,
+              checkIn: checkInTime,
+              checkOut: checkOutTime,
+              details: displayReason,
+            });
+            navigation.navigate('CorrectionSubmitted', {
+              date: today,
+              checkInTime,
+              checkOutTime,
+              reason: reasonLabel,
+              details: displayReason,
+            });
+          },
+        },
+      ]
+    );
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Attendance Correction" onBack={() => navigation.goBack()} />
-      <ProgressBar currentStep={3} totalSteps={3} title="Correction Progress" />
+      <ProgressBar currentStep={3} totalSteps={4} title="Correction Progress" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.heading}>Review your correction request</Text>
@@ -55,7 +69,7 @@ export const CorrectionSummaryScreen: React.FC<any> = ({ navigation, route }) =>
             </View>
             <View style={styles.summaryInfo}>
               <Text style={styles.summaryLabel}>Date</Text>
-              <Text style={styles.summaryValue}>Monday, Feb 23, 2023</Text>
+              <Text style={styles.summaryValue}>{today}</Text>
             </View>
           </View>
 
@@ -117,7 +131,7 @@ export const CorrectionSummaryScreen: React.FC<any> = ({ navigation, route }) =>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Submit Correction Request" onPress={handleSubmit} accessibilityLabel="Submit correction request" />
+        <Button title="Submit Correction Request" onPress={handleSubmit} />
       </View>
     </View>
   );

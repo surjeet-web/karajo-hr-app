@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "uvx",
+      "args": [
+        "code-review-graph",
+        "serve"
+      ],
+      "type": "stdio",
+      "env": []
+    },
+    "codedb": {
+      "command": "/Users/surjeet/bin/codedb",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

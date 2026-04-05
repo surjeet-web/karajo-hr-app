@@ -41,6 +41,9 @@ export const ManagerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const lateCount = attendanceHistory.filter(a => a.status === 'late').length;
   const attendanceRate = attendanceHistory.length > 0 ? Math.round(((onTimeCount + lateCount) / attendanceHistory.length) * 100) : 0;
 
+  const topPerformers = employees.filter(e => e.rating && e.rating >= 4.0).slice(0, 3);
+  const needsImprovement = employees.filter(e => e.rating && e.rating < 3.0).slice(0, 3);
+
   const allPendingRequests = [
     ...leave.requests.filter(r => r.status === 'pending').map(r => ({ type: 'leave', id: r.id, requesterName: r.delegate || 'Team Member', date: `${r.startDate} to ${r.endDate}`, days: r.days, status: r.status })),
     ...permission.requests.filter(r => r.status === 'pending').map(r => ({ type: 'permission', id: r.id, requesterName: 'Team Member', date: r.date, days: r.duration, status: r.status })),
@@ -85,8 +88,10 @@ export const ManagerDashboardScreen: React.FC<any> = ({ navigation }) => {
             {[
               { icon: 'checkmark-circle', label: 'Approvals', color: colors.success, screen: 'ManagerApproval' },
               { icon: 'people', label: canManageAllTeams ? 'All Teams' : 'My Team', color: colors.primary, screen: 'MyTeam' },
-              { icon: 'calendar', label: 'Planning', color: colors.warning, screen: 'TeamPlanning' },
-              { icon: 'bar-chart', label: 'Reports', color: colors.accentPurple, screen: 'TeamReports' },
+              { icon: 'trending-up', label: 'Performance', color: colors.accentPurple, screen: 'TeamPerformance' },
+              { icon: 'flag', label: 'Goals', color: colors.warning, screen: 'TeamGoals' },
+              { icon: 'calendar', label: 'Planning', color: colors.info, screen: 'TeamPlanning' },
+              { icon: 'bar-chart', label: 'Reports', color: colors.textSecondary, screen: 'TeamReports' },
             ].map(action => (
               <TouchableOpacity key={action.label} style={[styles.quickAction, { backgroundColor: `${action.color}10` }]}
                 onPress={() => { hapticFeedback('medium'); navigation.navigate(action.screen); }} activeOpacity={0.7}>
@@ -118,6 +123,29 @@ export const ManagerDashboardScreen: React.FC<any> = ({ navigation }) => {
             );
           })}
         </View>
+
+        {topPerformers.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Performers</Text>
+              <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('TeamPerformance'); }}>
+                <Text style={styles.viewAll}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            {topPerformers.map((emp, i) => (
+              <TouchableOpacity key={emp.id} style={[styles.perfRow, shadows.sm]} onPress={() => { hapticFeedback('medium'); navigation.navigate('EmployeeDetail', { employee: emp }); }} activeOpacity={0.7}>
+                <Ionicons name="star" size={20} color={colors.warning} />
+                <View style={styles.perfInfo}>
+                  <Text style={styles.perfName}>{emp.name}</Text>
+                  <Text style={styles.perfRole}>{emp.role}</Text>
+                </View>
+                <View style={styles.ratingBadge}>
+                  <Text style={styles.ratingText}>{emp.rating?.toFixed(1)}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {allPendingRequests.length > 0 && (
           <View style={styles.section}>
@@ -154,4 +182,10 @@ const styles = StyleSheet.create({
   teamInfo: { flex: 1 },
   teamName: { ...typography.body, color: colors.text, fontWeight: '600' },
   teamRole: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
+  perfRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.md },
+  perfInfo: { flex: 1 },
+  perfName: { ...typography.body, color: colors.text, fontWeight: '600' },
+  perfRole: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
+  ratingBadge: { backgroundColor: colors.warningLight, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: borderRadius.full },
+  ratingText: { ...typography.bodySmall, color: colors.warning, fontWeight: '700' },
 });

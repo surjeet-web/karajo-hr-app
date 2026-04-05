@@ -611,7 +611,7 @@ export const saveState = async (): Promise<void> => {
 // ATTENDANCE ACTIONS
 // ============================
 
-export const checkIn = (location = 'Office - New York'): void => {
+export const checkIn = (location: string, gps?: { latitude: number; longitude: number; accuracy: number }, photoUri?: string): void => {
   const now = new Date();
   const timeStr = now.toTimeString().slice(0, 5);
   const status = calculateAttendanceStatus(timeStr);
@@ -619,7 +619,7 @@ export const checkIn = (location = 'Office - New York'): void => {
   setState(prev => ({
     attendance: {
       ...prev.attendance,
-      today: { date: now.toISOString().split('T')[0], checkIn: timeStr, checkOut: null, status, location, totalHours: 0 },
+      today: { date: now.toISOString().split('T')[0], checkIn: timeStr, checkOut: null, status, location, totalHours: 0, gps, photoUri },
     },
     notifications: [{ id: Date.now(), title: 'Checked In', message: `You checked in at ${timeStr} from ${location}`, time: now.toISOString(), type: 'success', read: false }, ...prev.notifications],
   }));
@@ -896,6 +896,9 @@ export const appealPenalty = (data: PenaltyAppealData): void => {
   setState(prev => ({
     penalties: {
       ...prev.penalties,
+      records: prev.penalties.records.map(r =>
+        r.id === data.penaltyId ? { ...r, status: 'under-review' } : r
+      ),
       appeals: [{ id: Date.now(), penaltyId: data.penaltyId, type: data.type, explanation: data.explanation, status: 'submitted', submittedOn: new Date().toISOString().split('T')[0] }, ...prev.penalties.appeals],
     },
     notifications: [{ id: Date.now(), title: 'Penalty Appeal Filed', message: `Appeal for ${data.penaltyType} has been submitted`, time: new Date().toISOString(), type: 'info', read: false }, ...prev.notifications],
@@ -993,5 +996,98 @@ export const getBudgetUtilization = () => {
   return currentState.budgets.departments.map(d => ({
     ...d,
     ...calculateBudgetUtilization(d.spent, d.budget),
+  }));
+};
+
+// ============================
+// PERFORMANCE ACTIONS
+// ============================
+
+export const submitReview = (data: { employeeId: string; reviewerId: string; type: string; rating: number; summary: string; strengths: string; improvements: string }): void => {
+  const state = getState();
+  const newReview = {
+    id: state.performance.reviews.length + 1,
+    employeeId: data.employeeId,
+    reviewerId: data.reviewerId,
+    reviewer: 'You',
+    type: data.type,
+    rating: data.rating,
+    summary: data.summary,
+    strengths: data.strengths,
+    improvements: data.improvements,
+    status: 'completed' as const,
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    completed: true,
+  };
+  setState(prev => ({
+    ...prev,
+    performance: {
+      ...prev.performance,
+      reviews: [...prev.performance.reviews, newReview],
+      overview: {
+        ...prev.performance.overview,
+        completedReviews: prev.performance.overview.completedReviews + 1,
+        totalReviews: prev.performance.overview.totalReviews + 1,
+      },
+    },
+  }));
+};
+
+export const addGoal = (data: { title: string; description: string; category: string; priority: string; deadline: string }): void => {
+  const state = getState();
+  const newGoal = {
+    id: state.performance.goals.length + 1,
+    title: data.title,
+    description: data.description,
+    progress: 0,
+    deadline: data.deadline,
+    priority: data.priority as 'high' | 'medium' | 'low',
+    category: data.category,
+    status: 'not-started' as const,
+  };
+  setState(prev => ({
+    ...prev,
+    performance: {
+      ...prev.performance,
+      goals: [...prev.performance.goals, newGoal],
+    },
+  }));
+};
+
+export const updateGoalProgress = (goalId: number, progress: number): void => {
+  setState(prev => ({
+    ...prev,
+    performance: {
+      ...prev.performance,
+      goals: prev.performance.goals.map(g =>
+        g.id === goalId
+          ? {
+              ...g,
+              progress,
+              status: progress === 0 ? 'not-started' : progress < 100 ? 'in-progress' : 'completed',
+            }
+          : g
+      ),
+    },
+  }));
+};
+
+export const submitFeedback = (data: { toEmployeeId: string; fromEmployeeId: string; text: string; category: string; rating: number }): void => {
+  const state = getState();
+  const newFeedback: Feedback = {
+    id: state.performance.feedback.length + 1,
+    from: 'You',
+    to: data.toEmployeeId,
+    type: data.category,
+    text: data.text,
+    category: data.category,
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+  };
+  setState(prev => ({
+    ...prev,
+    performance: {
+      ...prev.performance,
+      feedback: [...prev.performance.feedback, newFeedback],
+    },
   }));
 };

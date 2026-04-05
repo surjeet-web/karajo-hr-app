@@ -79,38 +79,20 @@ export const EmployeeDirectoryScreen: React.FC<any> = ({ navigation }) => {
             { label: 'Total', value: employees.length, color: colors.text },
             { label: 'Active', value: employees.filter(e => e.status === 'active').length, color: colors.success },
             { label: 'Onboarding', value: employees.filter(e => e.status === 'onboarding').length, color: colors.warning },
-          ].map((stat, i) => {
-            const scaleIn = useScaleIn(300, 300 + i * 100);
-            return (
-              <Animated.View key={stat.label} style={[styles.statCard, { opacity: scaleIn.opacity, transform: [{ scale: scaleIn.scale }] }]}>
-                <Text style={[styles.statNumber, { color: stat.color }]}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </Animated.View>
-            );
-          })}
+          ].map((stat, i) => (
+            <AnimatedStatCard key={stat.label} stat={stat} index={i} />
+          ))}
         </Animated.View>
 
         <Text style={styles.sectionTitle}>Departments</Text>
         <View style={styles.deptGrid}>
-          {departments.map((dept, i) => {
-            const slideIn = useSlideIn('up', 300, 400 + i * 80);
-            return (
-              <Animated.View key={dept.id} style={[{ width: '47%', opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }] }]}>
-                <Card style={styles.deptCard} padding="md">
-                  <View style={[styles.deptIcon, { backgroundColor: `${dept.color}15` }]}>
-                    <Ionicons name="business" size={20} color={dept.color} />
-                  </View>
-                  <Text style={styles.deptName}>{dept.name}</Text>
-                  <Text style={styles.deptCount}>{dept.count} members</Text>
-                </Card>
-              </Animated.View>
-            );
-          })}
+          {departments.map((dept, i) => (
+            <AnimatedDeptCard key={dept.id} dept={dept} index={i} />
+          ))}
         </View>
 
         <Text style={styles.sectionTitle}>All Employees ({filteredEmployees.length})</Text>
         {filteredEmployees.map((emp, i) => {
-          const slideIn = useSlideIn('up', 350, 600 + i * 80);
           return (
             <AnimatedCard key={emp.id} delay={600 + i * 80} onPress={() => { hapticFeedback('medium'); navigation.navigate('EmployeeDetail', { employee: emp }); }}>
               <Card style={styles.empCard} padding="md">
@@ -149,13 +131,38 @@ export const EmployeeDirectoryScreen: React.FC<any> = ({ navigation }) => {
   );
 };
 
-const AnimatedCard = ({ children, delay, onPress }) => {
+const AnimatedCard = ({ children, delay, onPress }: any) => {
   const slideIn = useSlideIn('up', 350, delay);
   return (
     <Animated.View style={{ opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }], marginBottom: spacing.md }}>
       <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
         {children}
       </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+const AnimatedStatCard = ({ stat, index }: any) => {
+  const scaleIn = useScaleIn(300, 300 + index * 100);
+  return (
+    <Animated.View style={[styles.statCard, { opacity: scaleIn.opacity, transform: [{ scale: scaleIn.scale }] }]}>
+      <Text style={[styles.statNumber, { color: stat.color }]}>{stat.value}</Text>
+      <Text style={styles.statLabel}>{stat.label}</Text>
+    </Animated.View>
+  );
+};
+
+const AnimatedDeptCard = ({ dept, index }: any) => {
+  const slideIn = useSlideIn('up', 300, 400 + index * 80);
+  return (
+    <Animated.View style={[{ width: '47%', opacity: slideIn.opacity, transform: [{ translateY: slideIn.offset }] }]}>
+      <Card style={styles.deptCard} padding="md">
+        <View style={[styles.deptIcon, { backgroundColor: `${dept.color}15` }]}>
+          <Ionicons name="business" size={20} color={dept.color} />
+        </View>
+        <Text style={styles.deptName}>{dept.name}</Text>
+        <Text style={styles.deptCount}>{dept.count} members</Text>
+      </Card>
     </Animated.View>
   );
 };

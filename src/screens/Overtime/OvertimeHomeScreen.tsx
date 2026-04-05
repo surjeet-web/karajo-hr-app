@@ -7,7 +7,7 @@ import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Card, Badge, Button } from '../../components';
-import { getState, subscribe, requestOvertime } from '../../store';
+import { getState, subscribe } from '../../store';
 import { hapticFeedback } from '../../utils/haptics';
 import { AnimatedListItem } from '../../components';
 
@@ -31,11 +31,9 @@ export const OvertimeHomeScreen: React.FC<any> = ({ navigation }) => {
   const { overtime } = appState;
   const filtered = activeTab === 'all' ? overtime.requests : overtime.requests.filter(r => r.status === activeTab);
 
-  const handleSubmit = (): void => {
-    const today = new Date().toISOString().split('T')[0];
-    const overtimeData = { date: today, startTime: '18:00', endTime: '21:00', duration: 3, reason: 'Additional work hours' };
-    requestOvertime(overtimeData);
-    navigation.navigate('OvertimeSuccess', overtimeData);
+  const handleRequestOvertime = (): void => {
+    hapticFeedback('medium');
+    navigation.navigate('OvertimeRequest');
   };
 
   const getStatusVariant = (status) => {
@@ -109,8 +107,7 @@ export const OvertimeHomeScreen: React.FC<any> = ({ navigation }) => {
         <Button
           title="Request Overtime"
           icon={<Ionicons name="add" size={20} color={colors.textInverse} />}
-          onPress={() => { hapticFeedback('heavy'); handleSubmit(); }}
-          accessibilityLabel="Request overtime"
+          onPress={handleRequestOvertime}
         />
       </View>
     </View>

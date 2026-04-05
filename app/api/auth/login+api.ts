@@ -1,5 +1,5 @@
-import { getDB, saveDB, generateToken } from '../../../utils/db';
-import { parseBody, jsonResponse, errorResponse, validateField, corsHeaders } from '../../../utils/auth';
+import { getDB, saveDB, generateToken } from '../../utils/db';
+import { parseBody, jsonResponse, errorResponse, validateField, corsHeaders } from '../../utils/auth';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });

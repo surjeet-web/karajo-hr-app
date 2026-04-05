@@ -8,11 +8,11 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button, ProgressBar } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
-import { attendanceService } from '../../services';
 
 export const CorrectionFormScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { selectedReason } = route?.params || {};
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
   const [checkInTime, setCheckInTime] = useState<string>('09:00 AM');
   const [checkOutTime, setCheckOutTime] = useState<string>('05:00 PM');
   const [reason, setReason] = useState<string>('');
@@ -22,6 +22,7 @@ export const CorrectionFormScreen: React.FC<any> = ({ navigation, route }) => {
     hapticFeedback('heavy');
     navigation.navigate('CorrectionSummary', {
       selectedReason,
+      date: today,
       checkInTime,
       checkOutTime,
       reason,
@@ -31,7 +32,7 @@ export const CorrectionFormScreen: React.FC<any> = ({ navigation, route }) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Attendance Correction" onBack={() => navigation.goBack()} />
-      <ProgressBar currentStep={2} totalSteps={3} title="Correction Progress" />
+      <ProgressBar currentStep={2} totalSteps={4} title="Correction Progress" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.infoCard}>
@@ -40,7 +41,7 @@ export const CorrectionFormScreen: React.FC<any> = ({ navigation, route }) => {
           </View>
           <View>
             <Text style={styles.infoLabel}>Date</Text>
-            <Text style={styles.infoValue}>Monday, Feb 23, 2023</Text>
+            <Text style={styles.infoValue}>{today}</Text>
           </View>
         </View>
 
@@ -89,7 +90,7 @@ export const CorrectionFormScreen: React.FC<any> = ({ navigation, route }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Review Request" onPress={handleReview} accessibilityLabel="Review correction request" />
+        <Button title="Review Request" onPress={handleReview} />
       </View>
     </View>
   );

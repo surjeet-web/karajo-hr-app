@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, type ViewStyle } from 'react-native';
+import { Animated, Easing, type ViewStyle, type TransformsStyle } from 'react-native';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 
 interface AnimationStyle {
-  transform: Array<Record<string, Animated.Value | number>>;
+  transform: TransformsStyle['transform'];
   opacity: Animated.Value;
 }
 

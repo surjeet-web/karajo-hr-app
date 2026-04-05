@@ -8,20 +8,15 @@ function getDefaultDB(): Record<string, any> {
 
   return {
     users: [
-      {
-        id: 'EMP-2024-889',
-        name: 'Sarah Miller',
-        email: 'sarah@karajo.com',
-        password: 'password123',
-        role: 'Senior Software Engineer',
-        department: 'Engineering',
-        phone: '+1 (555) 123-4567',
-        joinDate: '2022-03-15',
-        manager: 'James Wilson',
-        status: 'active',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
-        salary: { basic: 5000, hra: 2000, allowances: 1500, deductions: 800, tax: 450 },
-      },
+      { id: 'EMP-001', name: 'Sarah Miller', email: 'sarah@karajo.com', password: 'password123', role: 'employee', department: 'Engineering', phone: '+1 (555) 123-4567', joinDate: '2022-03-15', manager: 'James Wilson', status: 'active', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop', salary: { basic: 5000, hra: 2000, allowances: 1500, deductions: 800, tax: 450 } },
+      { id: 'EMP-002', name: 'Alex Rivera', email: 'alex@karajo.com', password: 'password123', role: 'team_lead', department: 'Engineering', phone: '+1 (555) 234-5678', joinDate: '2021-06-01', manager: 'James Wilson', status: 'active', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop', salary: { basic: 5500, hra: 2200, allowances: 1600, deductions: 900, tax: 500 } },
+      { id: 'EMP-003', name: 'James Wilson', email: 'james@karajo.com', password: 'password123', role: 'manager', department: 'Engineering', phone: '+1 (555) 345-6789', joinDate: '2020-01-10', manager: 'CTO', status: 'active', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop', salary: { basic: 7000, hra: 2800, allowances: 2000, deductions: 1100, tax: 700 } },
+      { id: 'EMP-004', name: 'Maria Santos', email: 'maria@karajo.com', password: 'password123', role: 'hr_specialist', department: 'Human Resources', phone: '+1 (555) 456-7890', joinDate: '2021-09-15', manager: 'Linda Park', status: 'active', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', salary: { basic: 5200, hra: 2100, allowances: 1500, deductions: 850, tax: 480 } },
+      { id: 'EMP-005', name: 'Linda Park', email: 'linda@karajo.com', password: 'password123', role: 'hr_manager', department: 'Human Resources', phone: '+1 (555) 567-8901', joinDate: '2019-04-20', manager: 'CEO', status: 'active', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop', salary: { basic: 7500, hra: 3000, allowances: 2200, deductions: 1200, tax: 750 } },
+      { id: 'EMP-006', name: 'David Kim', email: 'david@karajo.com', password: 'password123', role: 'recruiter', department: 'Human Resources', phone: '+1 (555) 678-9012', joinDate: '2022-11-01', manager: 'Linda Park', status: 'active', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop', salary: { basic: 4800, hra: 1900, allowances: 1400, deductions: 750, tax: 420 } },
+      { id: 'EMP-007', name: 'Rachel Green', email: 'rachel@karajo.com', password: 'password123', role: 'accountant', department: 'Finance', phone: '+1 (555) 789-0123', joinDate: '2021-03-10', manager: 'Tom Brown', status: 'active', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop', salary: { basic: 5500, hra: 2200, allowances: 1600, deductions: 900, tax: 500 } },
+      { id: 'EMP-008', name: 'Tom Brown', email: 'tom@karajo.com', password: 'password123', role: 'finance_mgr', department: 'Finance', phone: '+1 (555) 890-1234', joinDate: '2019-08-15', manager: 'CEO', status: 'active', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop', salary: { basic: 7800, hra: 3100, allowances: 2300, deductions: 1250, tax: 780 } },
+      { id: 'EMP-009', name: 'Robert Chen', email: 'robert@karajo.com', password: 'password123', role: 'ceo', department: 'Executive', phone: '+1 (555) 901-2345', joinDate: '2018-01-01', manager: 'Board', status: 'active', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop', salary: { basic: 12000, hra: 5000, allowances: 3500, deductions: 2000, tax: 1500 } },
     ],
     tokens: [] as Array<{ token: string; refreshToken: string; userId: string; expiresAt: number }>,
     attendance: {

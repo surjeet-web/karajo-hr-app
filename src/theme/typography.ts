@@ -1,6 +1,8 @@
+import type { TextStyle } from 'react-native';
+
 type TypographyStyle = {
   fontSize: number;
-  fontWeight: string;
+  fontWeight: TextStyle['fontWeight'];
   lineHeight: number;
   letterSpacing?: number;
 };

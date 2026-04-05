@@ -9,7 +9,7 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Button } from '../../components';
 import { penaltyData } from '../../data/mockData';
-import { hapticFeedback } from '../../animations/hooks';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const PenaltyAppealScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();

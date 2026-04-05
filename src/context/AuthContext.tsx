@@ -1,8 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services';
 import { loadState } from '../store';
 import { getRolePermissions, hasPermission, hasAnyPermission, hasFeature, getRoleFeatures, canAccessScreen, getAccessibleScreens, getRoleLabel, getRoleLevel, canManageRole, canApprove, getApprovalLimit, getDepartmentAccess, filterByDepartmentAccess } from '../utils/permissions';
 import type { Role, Permission, ScreenName, RequestType } from '../utils/permissions';
+import type { RoleId, EmployeeFeatures } from '../utils/rbac';
+
+const ONBOARDING_KEY = '@karajo_onboarding_completed';
+
+const VALID_ROLES: RoleId[] = ['ceo', 'hr_manager', 'hr_specialist', 'recruiter', 'finance_mgr', 'accountant', 'manager', 'team_lead', 'employee'];
+
+const isValidRole = (role: string): role is RoleId => VALID_ROLES.includes(role as RoleId);
 
 export interface AuthUser {
   id: string;
@@ -18,22 +26,26 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  role: string;
+  role: RoleId;
   roleLabel: string;
   roleLevel: number;
   userDepartment: string | null;
-  setRole: React.Dispatch<React.SetStateAction<string>>;
-  switchRole: (newRole: string) => Promise<void>;
+  hasCompletedOnboarding: boolean;
+  isOnboarding: boolean;
+  setRole: (newRole: RoleId) => void;
+  switchRole: (newRole: RoleId) => Promise<void>;
   login: (email: string, password: string, selectedRole?: string) => Promise<unknown>;
   logout: () => Promise<void>;
   updateProfile: (updates: Record<string, unknown>) => Promise<unknown>;
   refreshUser: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
+  startOffboarding: () => void;
   permissions: Permission[];
-  features: Record<string, boolean>;
+  features: EmployeeFeatures;
   accessibleScreens: ScreenName[];
   hasPermission: (permission: Permission) => boolean;
   hasAnyPermission: (permissions: Permission[]) => boolean;
-  hasFeature: (feature: string) => boolean;
+  hasFeature: (feature: keyof EmployeeFeatures) => boolean;
   canAccessScreen: (screenName: ScreenName) => boolean;
   canApprove: (requestType: RequestType, value: number) => boolean;
   canManageRole: (targetRole: Role) => boolean;
@@ -49,8 +61,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [role, setRole] = useState<string>('employee');
+  const [role, setRoleState] = useState<RoleId>('employee');
   const [userDepartment, setUserDepartment] = useState<string | null>(null);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isOnboarding, setIsOnboarding] = useState(false);
+
+  const setRole = (newRole: RoleId) => {
+    if (!isValidRole(newRole)) {
+      console.warn(`[Auth] Invalid role: ${newRole}. Defaulting to 'employee'.`);
+      setRoleState('employee');
+      return;
+    }
+    setRoleState(newRole);
+  };
 
   const initialize = useCallback(async () => {
     try {
@@ -60,10 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const profile = await authService.getProfile();
         const userData = profile.user || profile;
         setUser(userData as AuthUser);
-        setRole((userData as any)?.role || profile.role || 'employee');
+        const rawRole = (userData as any)?.role || profile.role || 'employee';
+        setRole(isValidRole(rawRole) ? rawRole : 'employee');
         setUserDepartment((userData as any)?.department || profile.department || null);
         setIsAuthenticated(true);
         await loadState();
+
+        const onboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
+        setHasCompletedOnboarding(onboarded === 'true');
       }
     } catch (err) {
       setError((err as Error).message);
@@ -83,8 +110,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       const data = await authService.login(email, password);
       setUser(data.user as AuthUser);
-      const userRole = selectedRole || (data.user as any)?.role || 'employee';
-      setRole(userRole);
+      const rawRole = selectedRole || (data.user as any)?.role || 'employee';
+      setRole(isValidRole(rawRole) ? rawRole : 'employee');
       setUserDepartment((data.user as any)?.department || null);
       setIsAuthenticated(true);
       await loadState();
@@ -104,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setUser(null);
       setIsAuthenticated(false);
-      setRole('employee');
+      setRoleState('employee');
       setUserDepartment(null);
     }
   };
@@ -114,7 +141,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = await authService.updateProfile(updates);
       const userData = data.user || data;
       setUser(userData as AuthUser);
-      if ((data as any).user?.role) setRole((data as any).user.role);
+      if ((data as any).user?.role) {
+        const rawRole = (data as any).user.role;
+        setRole(isValidRole(rawRole) ? rawRole : role);
+      }
       if ((data as any).user?.department) setUserDepartment((data as any).user.department);
       return data;
     } catch (err) {
@@ -123,41 +153,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const switchRole = async (newRole: string) => {
-    setRole(newRole);
+  const switchRole = async (newRole: RoleId) => {
+    if (!isValidRole(newRole)) {
+      console.warn(`[Auth] switchRole rejected: "${newRole}" is not a valid role.`);
+      return;
+    }
+    setRoleState(newRole);
   };
 
-  const permissions = useMemo(() => getRolePermissions(role as Role), [role]);
-  const features = useMemo(() => getRoleFeatures(role as Role), [role]);
-  const accessibleScreens = useMemo(() => getAccessibleScreens(role as Role), [role]);
+  const permissions = useMemo(() => getRolePermissions(role), [role]);
+  const features = useMemo(() => getRoleFeatures(role), [role]);
+  const accessibleScreens = useMemo(() => getAccessibleScreens(role), [role]);
 
   const checkPermission = useCallback((permission: Permission) => {
-    return hasPermission(role as Role, permission);
+    return hasPermission(role, permission);
   }, [role]);
 
   const checkAnyPermission = useCallback((perms: Permission[]) => {
-    return hasAnyPermission(role as Role, perms);
+    return hasAnyPermission(role, perms);
   }, [role]);
 
-  const checkFeature = useCallback((feature: string) => {
-    return hasFeature(role as Role, feature);
+  const checkFeature = useCallback((feature: keyof EmployeeFeatures) => {
+    return hasFeature(role, feature);
   }, [role]);
 
   const checkScreenAccess = useCallback((screenName: ScreenName) => {
-    return canAccessScreen(role as Role, screenName);
+    return canAccessScreen(role, screenName);
   }, [role]);
 
   const checkCanApprove = useCallback((requestType: RequestType, value: number) => {
-    return canApprove(role as Role, requestType, value);
+    return canApprove(role, requestType, value);
   }, [role]);
 
   const checkCanManageRole = useCallback((targetRole: Role) => {
-    return canManageRole(role as Role, targetRole);
+    return canManageRole(role, targetRole);
   }, [role]);
 
   const filterDataByDepartment = useCallback(<T,>(data: T[]) => {
-    return filterByDepartmentAccess(role as Role, userDepartment || '', data as any) as unknown as T[];
+    return filterByDepartmentAccess(role, userDepartment || '', data as any) as unknown as T[];
   }, [role, userDepartment]);
+
+  const completeOnboarding = useCallback(async () => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    setHasCompletedOnboarding(true);
+    setIsOnboarding(false);
+  }, []);
+
+  const startOffboarding = useCallback(() => {
+    setIsOnboarding(false);
+  }, []);
 
   const value: AuthContextType = {
     user,
@@ -165,15 +209,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     error,
     role,
-    roleLabel: getRoleLabel(role as Role),
-    roleLevel: getRoleLevel(role as Role),
+    roleLabel: getRoleLabel(role),
+    roleLevel: getRoleLevel(role),
     userDepartment,
+    hasCompletedOnboarding,
+    isOnboarding,
     setRole,
     switchRole,
     login,
     logout,
     updateProfile,
     refreshUser: initialize,
+    completeOnboarding,
+    startOffboarding,
     permissions,
     features,
     accessibleScreens,
@@ -183,8 +231,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     canAccessScreen: checkScreenAccess,
     canApprove: checkCanApprove,
     canManageRole: checkCanManageRole,
-    getApprovalLimit: (type: RequestType) => getApprovalLimit(role as Role, type),
-    getDepartmentAccess: () => getDepartmentAccess(role as Role),
+    getApprovalLimit: (type: RequestType) => getApprovalLimit(role, type),
+    getDepartmentAccess: () => getDepartmentAccess(role),
     filterByDepartment: filterDataByDepartment,
   };
 

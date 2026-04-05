@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { NativeStackScreenProps, RouteProp } from '@react-navigation/native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,11 +8,13 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Card, Badge, Button } from '../../components';
 import { penaltyData } from '../../data/mockData';
-import { useFadeIn, useSlideIn, useScaleIn, hapticFeedback } from '../../animations/hooks';
+import { getState, subscribe } from '../../store';
+import { hapticFeedback } from '../../utils/haptics';
+import { useFadeIn, useSlideIn, useScaleIn } from '../../utils/animations';
 
 export const PenaltyHomeScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const summary = penaltyData.summary;
+  const [appState, setAppState] = useState(getState());
   const [activeTab, setActiveTab] = useState<string>('all');
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const headerFade = useFadeIn(300);
@@ -20,9 +22,18 @@ export const PenaltyHomeScreen: React.FC<any> = ({ navigation }) => {
   const statsSlide = useSlideIn('up', 400, 200);
   const listSlide = useSlideIn('up', 400, 500);
 
+  useEffect(() => {
+    const unsub = subscribe(setAppState);
+    return unsub;
+  }, []);
+
+  const penalties = appState.penalties?.records || [];
+  const summary = penaltyData.summary;
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    setAppState(getState());
+    setRefreshing(false);
   }, []);
 
   const getSeverityColor = (severity) => {
@@ -52,10 +63,10 @@ export const PenaltyHomeScreen: React.FC<any> = ({ navigation }) => {
     }
   };
 
-  const activePenalties = penaltyData.penalties.filter(p => p.status === 'active' || p.status === 'under-review');
-  const resolvedPenalties = penaltyData.penalties.filter(p => p.status === 'resolved');
+  const activePenalties = penalties.filter(p => p.status === 'active' || p.status === 'under-review');
+  const resolvedPenalties = penalties.filter(p => p.status === 'resolved');
 
-  const filteredPenalties = activeTab === 'all' ? penaltyData.penalties : activeTab === 'active' ? activePenalties : resolvedPenalties;
+  const filteredPenalties = activeTab === 'all' ? penalties : activeTab === 'active' ? activePenalties : resolvedPenalties;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -85,40 +96,18 @@ export const PenaltyHomeScreen: React.FC<any> = ({ navigation }) => {
             {[
               { icon: 'alert-circle', label: 'ACTIVE', value: summary.activePenalties, color: colors.error, delay: 300 },
               { icon: 'cash', label: 'TOTAL FINES', value: summary.totalFines, color: colors.warning, delay: 400 },
-            ].map((stat) => {
-              const scaleIn = useScaleIn(300, stat.delay);
-              return (
-                <Animated.View key={stat.label} style={[styles.summaryCard, { opacity: scaleIn.opacity, transform: [{ scale: scaleIn.scale }] }]}>
-                  <Card padding="md">
-                    <View style={styles.summaryIconRow}>
-                      <Ionicons name={stat.icon} size={16} color={stat.color} />
-                      <Text style={styles.summaryLabel}>{stat.label}</Text>
-                    </View>
-                    <Text style={[styles.summaryValue, { color: stat.color }]}>{stat.value}</Text>
-                  </Card>
-                </Animated.View>
-              );
-            })}
+            ].map((stat) => (
+              <AnimatedSummaryCard key={stat.label} stat={stat} />
+            ))}
           </View>
 
           <View style={styles.summaryGrid}>
             {[
               { icon: 'checkmark-circle', label: 'RESOLVED', value: summary.resolved, color: colors.success, delay: 500 },
               { icon: 'shield', label: 'WARNING PTS', value: summary.warningPoints, color: colors.accentPurple, delay: 600 },
-            ].map((stat) => {
-              const scaleIn = useScaleIn(300, stat.delay);
-              return (
-                <Animated.View key={stat.label} style={[styles.summaryCard, { opacity: scaleIn.opacity, transform: [{ scale: scaleIn.scale }] }]}>
-                  <Card padding="md">
-                    <View style={styles.summaryIconRow}>
-                      <Ionicons name={stat.icon} size={16} color={stat.color} />
-                      <Text style={styles.summaryLabel}>{stat.label}</Text>
-                    </View>
-                    <Text style={[styles.summaryValue, { color: stat.color }]}>{stat.value}</Text>
-                  </Card>
-                </Animated.View>
-              );
-            })}
+            ].map((stat) => (
+              <AnimatedSummaryCard key={stat.label} stat={stat} />
+            ))}
           </View>
         </Animated.View>
 
@@ -192,6 +181,21 @@ const PenaltyCard = ({ penalty, index, navigation, getSeverityColor, getSeverity
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
         </View>
+      </Card>
+    </Animated.View>
+  );
+};
+
+const AnimatedSummaryCard = ({ stat }: any) => {
+  const scaleIn = useScaleIn(300, stat.delay);
+  return (
+    <Animated.View style={[styles.summaryCard, { opacity: scaleIn.opacity, transform: [{ scale: scaleIn.scale }] }]}>
+      <Card padding="md">
+        <View style={styles.summaryIconRow}>
+          <Ionicons name={stat.icon} size={16} color={stat.color} />
+          <Text style={styles.summaryLabel}>{stat.label}</Text>
+        </View>
+        <Text style={[styles.summaryValue, { color: stat.color }]}>{stat.value}</Text>
       </Card>
     </Animated.View>
   );

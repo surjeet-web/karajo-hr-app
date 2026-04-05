@@ -1,5 +1,5 @@
-import { jsonResponse, errorResponse, corsHeaders } from '../../../utils/auth';
-import { getDB } from '../../../utils/db';
+import { jsonResponse, errorResponse, corsHeaders } from '../../utils/auth';
+import { getDB } from '../../utils/db';
 
 export function OPTIONS() {
   return new Response(null, { headers: corsHeaders() });

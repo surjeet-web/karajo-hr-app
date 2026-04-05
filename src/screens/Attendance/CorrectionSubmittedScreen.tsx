@@ -11,7 +11,9 @@ import { hapticFeedback } from '../../utils/haptics';
 
 export const CorrectionSubmittedScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { checkInTime, checkOutTime, reason } = route?.params || {};
+  const { date, checkInTime, checkOutTime, reason } = route?.params || {};
+  const today = date || new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+  const requestId = `#COR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
 
   useEffect(() => {
     hapticFeedback('success');
@@ -39,7 +41,7 @@ export const CorrectionSubmittedScreen: React.FC<any> = ({ navigation, route }) 
 
         <View style={styles.requestIdCard}>
           <Text style={styles.requestIdLabel}>Request ID</Text>
-          <Text style={styles.requestIdValue}>#COR-2023-889</Text>
+          <Text style={styles.requestIdValue}>{requestId}</Text>
         </View>
 
         <View style={styles.summaryCard}>
@@ -49,7 +51,7 @@ export const CorrectionSubmittedScreen: React.FC<any> = ({ navigation, route }) 
             </View>
             <View>
               <Text style={styles.summaryLabel}>Date</Text>
-              <Text style={styles.summaryValue}>Monday, Feb 23, 2023</Text>
+              <Text style={styles.summaryValue}>{today}</Text>
             </View>
           </View>
 
@@ -86,14 +88,12 @@ export const CorrectionSubmittedScreen: React.FC<any> = ({ navigation, route }) 
         <Button
           title="Back to Attendance"
           onPress={handleBackToAttendance}
-          accessibilityLabel="Back to attendance history"
         />
         <Button
           title="View Request Status"
           variant="outline"
           onPress={handleViewStatus}
           style={styles.secondaryButton}
-          accessibilityLabel="View correction request status"
         />
       </View>
     </View>

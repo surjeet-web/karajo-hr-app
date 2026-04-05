@@ -8,7 +8,7 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius, shadows } from '../../theme/spacing';
 import { Card, Badge, AnimatedCard, AnimatedListItem, PulsingIcon } from '../../components';
 import { getState, subscribe, checkIn, checkOut } from '../../store';
-import { currentUser } from '../../data/mockData';
+import { currentUser, performanceData } from '../../data/mockData';
 import { hapticFeedback } from '../../utils/haptics';
 import { useFadeIn, useSlideIn, usePressAnimation, useStaggerList } from '../../utils/animations';
 
@@ -75,6 +75,10 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
     { label: 'Permission', count: permission.requests.filter(r => r.status === 'pending').length, screen: 'PermissionHome' },
     { label: 'Overtime', count: overtime.requests.filter(r => r.status === 'pending').length, screen: 'OvertimeHome' },
   ].filter(item => item.count > 0);
+
+  const pendingReviews = performanceData.reviews.filter(r => r.status === 'pending').length;
+  const avgKpiScore = performanceData.overview.avgKpiScore;
+  const activeGoals = performanceData.goals.filter(g => g.progress > 0 && g.progress < 100).length;
 
   const fadeIn = useFadeIn();
   const slideIn = useSlideIn('up', 20, 400);
@@ -191,7 +195,7 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Pending Requests</Text>
             {pendingItems.map((item, index) => (
-              <AnimatedCard key={item.label} index={index} style={styles.pendingCard} padding="md" onPress={() => { hapticFeedback('medium'); navigation.navigate(item.screen); }} activeOpacity={0.7}>
+              <AnimatedCard key={item.label} style={styles.pendingCard} padding="md" onPress={() => { hapticFeedback('medium'); navigation.navigate(item.screen); }} activeOpacity={0.7}>
                 <View style={styles.pendingRow}>
                   <View style={[styles.pendingIcon, { backgroundColor: `${colors.warning}15` }]}>
                     <Ionicons name="time" size={18} color={colors.warning} />
@@ -203,6 +207,32 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
             ))}
           </View>
         )}
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Performance</Text>
+            <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('PerformanceDashboard'); }}>
+              <Text style={styles.viewAll}>View All</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.perfRow}>
+            <TouchableOpacity style={[styles.perfCard, { backgroundColor: colors.primaryLighter }]} onPress={() => { hapticFeedback('light'); navigation.navigate('KPITracking'); }} activeOpacity={0.7}>
+              <Ionicons name="speedometer" size={24} color={colors.primary} />
+              <Text style={[styles.perfValue, { color: colors.primary }]}>{avgKpiScore}%</Text>
+              <Text style={styles.perfLabel}>KPI Score</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.perfCard, { backgroundColor: colors.successLight }]} onPress={() => { hapticFeedback('light'); navigation.navigate('GoalSetting'); }} activeOpacity={0.7}>
+              <Ionicons name="flag" size={24} color={colors.success} />
+              <Text style={[styles.perfValue, { color: colors.success }]}>{activeGoals}</Text>
+              <Text style={styles.perfLabel}>Active Goals</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.perfCard, { backgroundColor: pendingReviews > 0 ? colors.warningLight : colors.surfaceVariant }]} onPress={() => { hapticFeedback('light'); navigation.navigate('PerformanceReview'); }} activeOpacity={0.7}>
+              <Ionicons name="clipboard" size={24} color={pendingReviews > 0 ? colors.warning : colors.textTertiary} />
+              <Text style={[styles.perfValue, { color: pendingReviews > 0 ? colors.warning : colors.textTertiary }]}>{pendingReviews}</Text>
+              <Text style={styles.perfLabel}>Pending Reviews</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -297,4 +327,9 @@ const styles = StyleSheet.create({
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   pendingIcon: { width: 36, height: 36, borderRadius: borderRadius.md, justifyContent: 'center', alignItems: 'center' },
   pendingText: { ...typography.body, color: colors.text, flex: 1 },
+  viewAll: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' },
+  perfRow: { flexDirection: 'row', gap: spacing.md },
+  perfCard: { flex: 1, borderRadius: borderRadius.lg, padding: spacing.md, alignItems: 'center', gap: spacing.xs },
+  perfValue: { ...typography.h3, fontWeight: '700' },
+  perfLabel: { ...typography.caption, color: colors.textSecondary },
 });

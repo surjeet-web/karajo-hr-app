@@ -51,14 +51,6 @@ export const PenaltyReviewScreen: React.FC<any> = ({ navigation, route }) => {
         },
       ]
     );
-    appealPenalty({
-      penaltyId: penalty?.id,
-      penaltyType: penalty?.type,
-      type: getAppealTypeLabel(appealType),
-      explanation,
-      supportingDoc,
-    });
-    navigation.navigate('PenaltySuccess');
   };
 
   return (
