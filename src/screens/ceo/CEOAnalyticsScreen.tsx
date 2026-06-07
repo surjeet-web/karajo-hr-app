@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -7,56 +7,85 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius, shadows } from '../../theme/spacing';
 import { Header, Card } from '../../components';
 import { StatCard } from '../../components/management';
+import { hapticFeedback } from '../../utils/haptics';
+import { 
+  getHeadcountMetrics,
+  getDepartmentMetrics,
+  getWorkforcePipeline,
+  getFinancialMetrics
+} from '../../services';
+import { formatCurrency } from '../../utils/calculations';
 
 export const CEOAnalyticsScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   useEffect(() => { hapticFeedback('medium'); }, []);
+
+  const headcount = getHeadcountMetrics();
+  const departmentMetrics = getDepartmentMetrics();
+  const pipeline = getWorkforcePipeline();
+  const financial = getFinancialMetrics();
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header title="Company Analytics" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.statsRow}>
-          <StatCard icon="trending-up" label="Headcount Growth" value="+12%" color={colors.success} delay={0} />
-          <StatCard icon="trending-down" label="Attrition Rate" value="3.2%" color={colors.warning} delay={100} />
-          <StatCard icon="people" label="Avg Tenure" value="2.4yr" color={colors.primary} delay={200} />
-          <StatCard icon="star" label="eNPS Score" value="72" trend="up" trendValue="+5" color={colors.accentPurple} delay={300} />
+          <StatCard icon="trending-up" label="Headcount Growth" value={`${headcount.growth}%`} color={headcount.growth >= 0 ? colors.success : colors.error} delay={0} />
+          <StatCard icon="trending-down" label="Attrition Rate" value={`${headcount.attrition}%`} color={colors.warning} delay={100} />
+          <StatCard icon="people" label="Total Active" value={headcount.active.toString()} color={colors.primary} delay={200} />
+          <StatCard icon="star" label="New Hires" value={headcount.newHires.toString()} trend="up" trendValue="+3" color={colors.accentPurple} delay={300} />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Department Costs</Text>
-          {[
-            { name: 'Engineering', cost: '$450K', pct: 38, color: colors.primary },
-            { name: 'Sales', cost: '$320K', pct: 27, color: colors.success },
-            { name: 'Operations', cost: '$280K', pct: 23, color: colors.warning },
-            { name: 'Marketing', cost: '$200K', pct: 12, color: colors.accentPurple },
-          ].map((dept, i) => (
-            <Card key={i} style={styles.costCard} padding="md">
-              <View style={styles.costHeader}>
-                <Text style={styles.costName}>{dept.name}</Text>
-                <Text style={styles.costAmount}>{dept.cost}</Text>
-              </View>
-              <View style={styles.costBar}>
-                <View style={[styles.costFill, { width: `${dept.pct}%`, backgroundColor: dept.color }]} />
-              </View>
-            </Card>
-          ))}
+          {departmentMetrics.map((dept, i) => {
+            const pct = Math.round((dept.totalExpenses / financial.totalPayroll) * 100);
+            const colorsList = [colors.primary, colors.success, colors.warning, colors.accentPurple, colors.accentPink, colors.info];
+            return (
+              <TouchableOpacity 
+                key={dept.id} 
+                onPress={() => { hapticFeedback('light'); navigation.navigate('DepartmentDetail', { department: dept }); }} 
+                activeOpacity={0.7}
+              >
+                <Card style={styles.costCard} padding="md">
+                  <View style={styles.costHeader}>
+                    <Text style={styles.costName}>{dept.name}</Text>
+                    <Text style={styles.costAmount}>{formatCurrency(dept.totalExpenses)}</Text>
+                  </View>
+                  <View style={styles.costBar}>
+                    <View 
+                      style={[
+                        styles.costFill, 
+                        { 
+                          width: `${pct}%`, 
+                          backgroundColor: colorsList[i % colorsList.length] 
+                        }
+                      ]} 
+                    />
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Key Metrics</Text>
           {[
-            { label: 'Revenue per Employee', value: '$285K', change: '+8%', positive: true },
-            { label: 'Cost per Hire', value: '$4,200', change: '-12%', positive: true },
-            { label: 'Time to Fill', value: '32 days', change: '-5 days', positive: true },
-            { label: 'Offer Acceptance Rate', value: '89%', change: '+3%', positive: true },
+            { label: 'Revenue per Employee', value: '$285K', change: '+8%', positive: true, screen: 'CEOFinancial' },
+            { label: 'Cost per Hire', value: '$4,200', change: '-12%', positive: true, screen: 'WorkforcePlanning' },
+            { label: 'Time to Fill', value: '32 days', change: '-5 days', positive: true, screen: 'WorkforcePlanning' },
+            { label: 'Offer Acceptance Rate', value: '89%', change: '+3%', positive: true, screen: 'CEODiversity' },
           ].map((metric, i) => (
-            <View key={i} style={styles.metricRow}>
-              <Text style={styles.metricLabel}>{metric.label}</Text>
-              <View style={styles.metricValues}>
-                <Text style={styles.metricValue}>{metric.value}</Text>
-                <Text style={[styles.metricChange, { color: metric.positive ? colors.success : colors.error }]}>{metric.change}</Text>
+            <TouchableOpacity key={i} onPress={() => { hapticFeedback('light'); navigation.navigate(metric.screen); }} activeOpacity={0.7}>
+              <View style={styles.metricRow}>
+                <Text style={styles.metricLabel}>{metric.label}</Text>
+                <View style={styles.metricValues}>
+                  <Text style={styles.metricValue}>{metric.value}</Text>
+                  <Text style={[styles.metricChange, { color: metric.positive ? colors.success : colors.error }]}>{metric.change}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} style={{ marginLeft: 8 }} />
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>

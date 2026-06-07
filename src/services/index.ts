@@ -750,3 +750,7 @@ export const attendanceCorrectionService = {
     return api.delete(`/attendance/corrections?id=${id}`);
   },
 };
+
+// CEO Analytics Service
+export * from './ceoAnalytics';
+export { default as ceoAnalytics } from './ceoAnalytics';

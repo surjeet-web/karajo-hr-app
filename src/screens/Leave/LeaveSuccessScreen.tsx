@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Button } from '../../components';
+import { Header, Button } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
 
 export const LeaveSuccessScreen: React.FC<any> = ({ navigation, route }) => {
@@ -24,7 +24,8 @@ export const LeaveSuccessScreen: React.FC<any> = ({ navigation, route }) => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
+      <Header title="Leave Request" onBack={() => navigation.goBack()} />
       <View style={styles.content}>
         <View style={styles.successIcon}>
           <Ionicons name="checkmark" size={40} color={colors.textInverse} />

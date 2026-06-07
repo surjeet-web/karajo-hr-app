@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Card, AnimatedListItem } from '../../components';
+import { Header, Card, AnimatedListItem } from '../../components';
 import { activityData } from '../../data/mockData';
 import { hapticFeedback } from '../../utils/haptics';
 import { useFadeIn, useSlideIn } from '../../utils/animations';
@@ -67,8 +67,9 @@ export const ActivityListScreen: React.FC<any> = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+    <View style={styles.container}>
+      <Header title="Time & Activity" onBack={() => navigation.goBack()} />
+      {/* Date Header */}
       <View style={styles.header}>
         <View style={styles.dateNavigator}>
           <TouchableOpacity onPress={goPrevDay} activeOpacity={0.7} accessibilityLabel="Previous day">

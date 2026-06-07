@@ -32,7 +32,7 @@ export const DepartmentOverviewScreen: React.FC<any> = ({ navigation }) => {
         </View>
 
         {departments.map((dept, i) => (
-          <TouchableOpacity key={dept.name} style={[styles.deptCard, shadows.sm]} onPress={() => { hapticFeedback('medium'); navigation.navigate('DepartmentDetail'); }} activeOpacity={0.7}>
+          <TouchableOpacity key={dept.name} style={[styles.deptCard, shadows.sm]} onPress={() => { hapticFeedback('medium'); navigation.navigate('DepartmentDetail', { department: { name: dept.name } }); }} activeOpacity={0.7}>
             <DepartmentCard department={dept} />
           </TouchableOpacity>
         ))}

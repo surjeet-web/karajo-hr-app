@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { Button, Badge } from '../../components';
+import { Header, Button, Badge } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
 import { useFadeIn, useSlideIn } from '../../utils/animations';
 
@@ -85,7 +85,8 @@ export const AttendanceLocationScreen: React.FC<any> = ({ navigation, route }) =
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
+      <Header title="Check In" onBack={() => navigation.goBack()} />
       {/* Map Background */}
       <View style={styles.mapContainer}>
         {location && (

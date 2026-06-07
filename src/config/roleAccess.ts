@@ -79,6 +79,7 @@ const EMPLOYEE_SCREENS = [
   'PersonalInfo',
   'IdentityVerification',
   'EmploymentInfo',
+  'ChangePassword',
   
   // Penalty
   'PenaltyHome',
@@ -106,6 +107,7 @@ const EMPLOYEE_SCREENS = [
   'EmployeeDirectory',
   'EmployeeDetail',
   'OrgChart',
+  'TeamMembers',
 ];
 
 const TEAM_LEAD_SCREENS = [
@@ -115,14 +117,18 @@ const TEAM_LEAD_SCREENS = [
   'TeamAttendance',
   'TeamPerformance',
   'TeamGoals',
+  'TeamApprovals',
+  'TeamApprovalDetail',
 ];
 
 const MANAGER_SCREENS = [
   ...TEAM_LEAD_SCREENS,
   
   // Manager-specific
+  'ManagerDashboard',
   'MyTeam',
-  'ManagerApproval',
+  'TeamApprovals',
+  'TeamApprovalDetail',
   'TeamPlanning',
   'TeamReports',
 ];
@@ -131,6 +137,12 @@ const HR_SPECIALIST_SCREENS = [
   ...EMPLOYEE_SCREENS,
   
   // HR Operations
+  'HRDashboard',
+  'HRApprovalCenter',
+  'HREmployeeManagement',
+  'HRAttendanceManagement',
+  'HRReports',
+  'HRSettings',
   'HREmployeeProfile',
   'HRApprovalDetail',
   'HRReportDetail',
@@ -159,6 +171,13 @@ const RECRUITER_SCREENS = [
   'EmployeeDirectory',
   'EmployeeDetail',
   'OrgChart',
+  
+  // Recruiter-specific
+  'RecruiterDashboard',
+  'CandidateManagement',
+  'JobManagement',
+  'InterviewManagement',
+  'OfferManagement',
 ];
 
 const HR_MANAGER_SCREENS = [
@@ -174,10 +193,14 @@ const ACCOUNTANT_SCREENS = [
   ...EMPLOYEE_SCREENS,
   
   // Finance Operations
+  'FinanceDashboard',
   'FinanceEmployee',
   'FinanceBudget',
   'FinanceTax',
   'FinanceAudit',
+  'PayrollManagement',
+  'FinanceExpenseManagement',
+  'FinanceReports',
   'PayrollDetail',
   'PayrollHistory',
   'FinanceReportDetail',
@@ -187,9 +210,7 @@ const FINANCE_MANAGER_SCREENS = [
   ...ACCOUNTANT_SCREENS,
   
   // Full finance management
-  'FinanceBudget',
-  'FinanceTax',
-  'FinanceAudit',
+  'FinanceSettings',
 ];
 
 const CEO_SCREENS = [
@@ -204,6 +225,7 @@ const CEO_SCREENS = [
   'EmployeeDirectory',
   'EmployeeDetail',
   'OrgChart',
+  'TeamMembers',
   
   // Performance
   'PerformanceDashboard',
@@ -211,53 +233,64 @@ const CEO_SCREENS = [
   'PerformanceReview',
   'GoalSetting',
   'Feedback360',
+  
+  // CEO-specific
+  'CEOAnalytics',
+  'CEOFinancial',
+  'DepartmentOverview',
+  'CEOSuccession',
+  'CEOCompliance',
+  'CEODiversity',
+  'CEOCompensation',
+  'CEOReports',
+  'CompanyGoals',
 ];
 
 // ==================== ROLE TO SCREEN MAPPING ====================
 
 export const ROLE_SCREEN_ACCESS: Record<RoleId, ScreenAccess> = {
   employee: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: EMPLOYEE_SCREENS,
   },
   
   team_lead: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'Team', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: TEAM_LEAD_SCREENS,
   },
   
   manager: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'Team', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: MANAGER_SCREENS,
   },
   
   hr_specialist: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'HR', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: HR_SPECIALIST_SCREENS,
   },
   
   recruiter: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'HR', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: RECRUITER_SCREENS,
   },
   
   hr_manager: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'HR', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: HR_MANAGER_SCREENS,
   },
   
   accountant: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: ACCOUNTANT_SCREENS,
   },
   
   finance_mgr: {
-    tabs: ['Home', 'Activity', 'Center', 'Performance', 'Finance', 'Notification'],
+    tabs: ['Home', 'Work', 'Center', 'Finance', 'More'],
     stack: FINANCE_MANAGER_SCREENS,
   },
   
   ceo: {
-    tabs: ['CEO Home', 'Analytics', 'Departments', 'Goals', 'CEO Reports'],
+    tabs: ['Home', 'Analytics', 'Finance', 'Departments', 'More'],
     stack: CEO_SCREENS,
   },
 };

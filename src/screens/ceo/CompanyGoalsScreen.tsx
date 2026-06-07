@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -7,6 +7,7 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius, shadows } from '../../theme/spacing';
 import { Header, Card, ProgressBar } from '../../components';
 import { StatCard } from '../../components/management';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const CompanyGoalsScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -29,19 +30,21 @@ export const CompanyGoalsScreen: React.FC<any> = ({ navigation }) => {
         </View>
 
         {goals.map((goal, i) => (
-          <Card key={i} style={styles.goalCard} padding="md">
-            <View style={styles.goalHeader}>
-              <Text style={styles.goalTitle}>{goal.title}</Text>
-              <View style={[styles.priorityDot, { backgroundColor: goal.priority === 'high' ? colors.error : goal.priority === 'medium' ? colors.warning : colors.success }]} />
-            </View>
-            <Text style={styles.goalDept}>{goal.department} • Due {goal.deadline}</Text>
-            <View style={styles.progressRow}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${goal.progress}%`, backgroundColor: goal.progress >= 60 ? colors.success : goal.progress >= 30 ? colors.warning : colors.error }]} />
+          <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => { hapticFeedback('light'); navigation.navigate('CEOSuccession'); }}>
+            <Card style={styles.goalCard} padding="md">
+              <View style={styles.goalHeader}>
+                <Text style={styles.goalTitle}>{goal.title}</Text>
+                <View style={[styles.priorityDot, { backgroundColor: goal.priority === 'high' ? colors.error : goal.priority === 'medium' ? colors.warning : colors.success }]} />
               </View>
-              <Text style={styles.progressText}>{goal.progress}%</Text>
-            </View>
-          </Card>
+              <Text style={styles.goalDept}>{goal.department} • Due {goal.deadline}</Text>
+              <View style={styles.progressRow}>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${goal.progress}%`, backgroundColor: goal.progress >= 60 ? colors.success : goal.progress >= 30 ? colors.warning : colors.error }]} />
+                </View>
+                <Text style={styles.progressText}>{goal.progress}%</Text>
+              </View>
+            </Card>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>

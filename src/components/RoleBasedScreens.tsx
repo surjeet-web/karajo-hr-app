@@ -58,6 +58,7 @@ export const ALL_SCREENS: ScreenConfig[] = [
   { name: 'PersonalInfo', component: require('../screens/Profile/PersonalInfoScreen').PersonalInfoScreen },
   { name: 'IdentityVerification', component: require('../screens/Profile/IdentityVerificationScreen').IdentityVerificationScreen },
   { name: 'EmploymentInfo', component: require('../screens/Profile/EmploymentInfoScreen').EmploymentInfoScreen },
+  { name: 'ChangePassword', component: require('../screens/auth/ChangePasswordScreen').ChangePasswordScreen, isModal: true },
   
   // Penalty
   { name: 'PenaltyHome', component: require('../screens/Penalty/PenaltyHomeScreen').PenaltyHomeScreen },
@@ -81,6 +82,12 @@ export const ALL_SCREENS: ScreenConfig[] = [
   { name: 'Feedback360', component: require('../screens/Performance/Feedback360Screen').Feedback360Screen },
   
   // HR
+  { name: 'HRDashboard', component: require('../screens/hr/HRDashboardScreen').HRDashboardScreen },
+  { name: 'HRApprovalCenter', component: require('../screens/hr/HRApprovalCenterScreen').HRApprovalCenterScreen },
+  { name: 'HREmployeeManagement', component: require('../screens/hr/HREmployeeManagementScreen').HREmployeeManagementScreen },
+  { name: 'HRAttendanceManagement', component: require('../screens/hr/HRAttendanceManagementScreen').HRAttendanceManagementScreen },
+  { name: 'HRReports', component: require('../screens/hr/HRReportsScreen').HRReportsScreen },
+  { name: 'HRSettings', component: require('../screens/hr/HRSettingsScreen').HRSettingsScreen },
   { name: 'HREmployeeProfile', component: require('../screens/hr/HREmployeeProfileScreen').HREmployeeProfileScreen },
   { name: 'HRApprovalDetail', component: require('../screens/hr/HRApprovalDetailScreen').HRApprovalDetailScreen },
   { name: 'HRReportDetail', component: require('../screens/hr/HRReportDetailScreen').HRReportDetailScreen },
@@ -93,6 +100,11 @@ export const ALL_SCREENS: ScreenConfig[] = [
   { name: 'HRBulkActions', component: require('../screens/hr/HRBulkActionsScreen').HRBulkActionsScreen },
   
   // Finance
+  { name: 'FinanceDashboard', component: require('../screens/finance-mgr/FinanceDashboardScreen').FinanceDashboardScreen },
+  { name: 'PayrollManagement', component: require('../screens/finance-mgr/PayrollManagementScreen').PayrollManagementScreen },
+  { name: 'FinanceExpenseManagement', component: require('../screens/finance-mgr/FinanceExpenseManagementScreen').FinanceExpenseManagementScreen },
+  { name: 'FinanceReports', component: require('../screens/finance-mgr/FinanceReportsScreen').FinanceReportsScreen },
+  { name: 'FinanceSettings', component: require('../screens/finance-mgr/FinanceSettingsScreen').FinanceSettingsScreen },
   { name: 'FinanceEmployee', component: require('../screens/finance-mgr/FinanceEmployeeScreen').FinanceEmployeeScreen },
   { name: 'FinanceBudget', component: require('../screens/finance-mgr/FinanceBudgetScreen').FinanceBudgetScreen },
   { name: 'FinanceTax', component: require('../screens/finance-mgr/FinanceTaxScreen').FinanceTaxScreen },
@@ -102,13 +114,35 @@ export const ALL_SCREENS: ScreenConfig[] = [
   { name: 'FinanceReportDetail', component: require('../screens/finance-mgr/FinanceReportDetailScreen').FinanceReportDetailScreen },
   
   // Manager
+  { name: 'ManagerDashboard', component: require('../screens/manager/ManagerDashboardScreen').ManagerDashboardScreen },
+  { name: 'MyTeam', component: require('../screens/manager/MyTeamScreen').MyTeamScreen },
+  { name: 'TeamApprovals', component: require('../screens/manager/ManagerApprovalScreen').ManagerApprovalScreen },
+  { name: 'TeamApprovalDetail', component: require('../screens/manager/ManagerApprovalDetailScreen').ManagerApprovalDetailScreen },
+  { name: 'TeamPlanning', component: require('../screens/manager/TeamPlanningScreen').TeamPlanningScreen },
+  { name: 'TeamReports', component: require('../screens/manager/TeamReportsScreen').TeamReportsScreen },
   { name: 'TeamAttendance', component: require('../screens/manager/TeamAttendanceScreen').TeamAttendanceScreen },
   { name: 'TeamPerformance', component: require('../screens/manager/TeamPerformanceScreen').TeamPerformanceScreen },
   { name: 'TeamGoals', component: require('../screens/manager/TeamGoalsScreen').TeamGoalsScreen },
   
   // CEO
+  { name: 'CEOAnalytics', component: require('../screens/ceo/CEOAnalyticsScreen').CEOAnalyticsScreen },
+  { name: 'CEOFinancial', component: require('../screens/ceo/CEOFinancialScreen').CEOFinancialScreen },
+  { name: 'DepartmentOverview', component: require('../screens/ceo/DepartmentOverviewScreen').DepartmentOverviewScreen },
+  { name: 'CEOSuccession', component: require('../screens/ceo/CEOSuccessionScreen').CEOSuccessionScreen },
+  { name: 'CEOCompliance', component: require('../screens/ceo/CEOComplianceScreen').CEOComplianceScreen },
+  { name: 'CompanyGoals', component: require('../screens/ceo/CompanyGoalsScreen').CompanyGoalsScreen },
+  { name: 'CEODiversity', component: require('../screens/ceo/CEODiversityScreen').CEODiversityScreen },
+  { name: 'CEOReports', component: require('../screens/ceo/CEOReportsScreen').CEOReportsScreen },
   { name: 'DepartmentDetail', component: require('../screens/ceo/DepartmentDetailScreen').DepartmentDetailScreen },
   { name: 'WorkforcePlanning', component: require('../screens/ceo/WorkforcePlanningScreen').WorkforcePlanningScreen },
+  { name: 'CEOCompensation', component: require('../screens/ceo/CEOCompensationScreen').CEOCompensationScreen },
+  
+  // Recruiter
+  { name: 'RecruiterDashboard', component: require('../screens/recruiter/RecruiterDashboardScreen').RecruiterDashboardScreen },
+  { name: 'CandidateManagement', component: require('../screens/recruiter/CandidateManagementScreen').CandidateManagementScreen },
+  { name: 'JobManagement', component: require('../screens/recruiter/JobManagementScreen').JobManagementScreen },
+  { name: 'InterviewManagement', component: require('../screens/recruiter/InterviewManagementScreen').InterviewManagementScreen },
+  { name: 'OfferManagement', component: require('../screens/recruiter/OfferManagementScreen').OfferManagementScreen },
 ];
 
 /**

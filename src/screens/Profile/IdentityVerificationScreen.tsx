@@ -19,7 +19,7 @@ export const IdentityVerificationScreen: React.FC<any> = ({ navigation }) => {
       verifiedDate: 'Verified on Mar 15, 2024',
     },
     {
-      icon: 'passport' as const,
+      icon: 'airplane-outline' as const,
       title: 'Passport',
       status: 'verified' as const,
       details: 'Passport No: AB1234567',

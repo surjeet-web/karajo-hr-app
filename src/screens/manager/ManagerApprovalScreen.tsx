@@ -116,7 +116,7 @@ export const ManagerApprovalScreen: React.FC<any> = ({ navigation }) => {
           <StatCard icon="close-circle" label="Rejected" value={rejectedCount.toString()} color={colors.error} delay={200} />
         </View>
         {filteredApprovals.length > 0 ? filteredApprovals.map((a, i) => (
-          <ApprovalCard key={`${a.type}-${a.id}`} request={a} onPress={() => { setSelectedApproval(a); setShowSheet(true); }} delay={300 + i * 80} />
+          <ApprovalCard key={`${a.type}-${a.id}`} request={a} onPress={() => { navigation.navigate('TeamApprovalDetail', { request: a }); }} delay={300 + i * 80} />
         )) : (
           <View style={styles.emptyState}>
             <Ionicons name="checkmark-circle" size={64} color={colors.textTertiary} />

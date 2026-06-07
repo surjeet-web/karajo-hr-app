@@ -8,16 +8,31 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { Header, Card, Badge, Avatar, Button, ProgressBar, StatusTimeline, AnimatedListItem } from '../../components';
 import { hapticFeedback } from '../../utils/haptics';
-import { useFadeIn, useSlideIn } from '../../utils/animations';
+import { useFadeIn, useSlideIn } from '../../animations/hooks';
 import { getState } from '../../store';
 
 export const EmployeeDetailScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { employee } = route.params;
   const fadeIn = useFadeIn();
   const slideIn = useSlideIn('up', 30, 400);
 
   useEffect(() => { hapticFeedback('medium'); }, []);
+
+  const routeParams = route?.params || {};
+  const { employee } = routeParams;
+
+  if (!employee) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <Header title="Employee Detail" onBack={() => navigation.goBack()} />
+        <View style={styles.emptyState}>
+          <Ionicons name="person-outline" size={64} color={colors.textTertiary} />
+          <Text style={styles.emptyTitle}>No Employee Selected</Text>
+          <Button title="Go Back" onPress={() => navigation.goBack()} style={{ marginTop: spacing.md }} />
+        </View>
+      </View>
+    );
+  }
 
   const infoRows = [
     { icon: 'mail-outline', label: 'Email', value: employee.email, action: () => { hapticFeedback('medium'); Linking.openURL(`mailto:${employee.email}`); } },
@@ -53,7 +68,7 @@ export const EmployeeDetailScreen: React.FC<any> = ({ navigation, route }) => {
             </View>
           </View>
 
-          {employee.rating && (
+          {employee.rating ? (
             <View style={styles.ratingRow}>
               <View style={styles.ratingItem}>
                 <Ionicons name="star" size={20} color={colors.warning} />
@@ -71,7 +86,7 @@ export const EmployeeDetailScreen: React.FC<any> = ({ navigation, route }) => {
                 <Text style={styles.ratingLabel}>Reviews</Text>
               </View>
             </View>
-          )}
+          ) : null}
         </Card>
         </Animated.View>
 
@@ -103,11 +118,11 @@ export const EmployeeDetailScreen: React.FC<any> = ({ navigation, route }) => {
           <StatusTimeline items={timeline} />
         </Card>
 
-        {employee.pendingReviews > 0 && (
+        {(employee.pendingReviews && employee.pendingReviews > 0) ? (
           <View style={styles.footer}>
             <Button title={`View ${employee.pendingReviews} Pending Reviews`} onPress={() => { hapticFeedback('medium'); navigation.navigate('PerformanceDashboard'); }} />
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -132,4 +147,6 @@ const styles = StyleSheet.create({
   infoLabel: { ...typography.caption, color: colors.textTertiary },
   infoValue: { ...typography.body, color: colors.text },
   footer: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  emptyState: { alignItems: 'center', paddingVertical: spacing.xxxxl },
+  emptyTitle: { ...typography.h4, color: colors.text, marginTop: spacing.md },
 });

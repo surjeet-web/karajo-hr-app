@@ -86,7 +86,7 @@ export const ManagerDashboardScreen: React.FC<any> = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
             {[
-              { icon: 'checkmark-circle', label: 'Approvals', color: colors.success, screen: 'ManagerApproval' },
+              { icon: 'checkmark-circle', label: 'Approvals', color: colors.success, screen: 'TeamApprovals' },
               { icon: 'people', label: canManageAllTeams ? 'All Teams' : 'My Team', color: colors.primary, screen: 'MyTeam' },
               { icon: 'trending-up', label: 'Performance', color: colors.accentPurple, screen: 'TeamPerformance' },
               { icon: 'flag', label: 'Goals', color: colors.warning, screen: 'TeamGoals' },
@@ -151,10 +151,10 @@ export const ManagerDashboardScreen: React.FC<any> = ({ navigation }) => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Pending Approvals ({totalPending})</Text>
-              <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('ManagerApproval'); }}><Text style={styles.viewAll}>View All</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => { hapticFeedback('light'); navigation.navigate('TeamApprovals'); }}><Text style={styles.viewAll}>View All</Text></TouchableOpacity>
             </View>
             {allPendingRequests.map((req, i) => (
-              <ApprovalCard key={`${req.type}-${req.id}`} request={req} onPress={() => { hapticFeedback('medium'); navigation.navigate('ManagerApproval'); }} delay={500 + i * 80} />
+              <ApprovalCard key={`${req.type}-${req.id}`} request={req} onPress={() => { hapticFeedback('medium'); navigation.navigate('TeamApprovals'); }} delay={500 + i * 80} />
             ))}
           </View>
         )}

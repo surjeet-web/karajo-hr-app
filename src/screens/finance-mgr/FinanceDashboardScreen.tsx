@@ -77,7 +77,7 @@ export const FinanceDashboardScreen: React.FC<any> = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
             {[
-              { icon: 'card', label: 'Run Payroll', color: colors.primary, screen: 'PayrollManagement', action: () => { hapticFeedback('medium'); navigation.navigate('PayrollManagement'); } },
+              { icon: 'card', label: 'Run Payroll', color: colors.primary, screen: 'Payroll', action: () => { hapticFeedback('medium'); navigation.navigate('Payroll'); } },
               { icon: 'receipt', label: 'Expenses', color: colors.success, screen: 'FinanceExpenseManagement', action: () => { hapticFeedback('medium'); navigation.navigate('FinanceExpenseManagement'); } },
               { icon: 'wallet', label: 'Budgets', color: colors.warning, screen: 'FinanceBudget', action: () => { hapticFeedback('medium'); navigation.navigate('FinanceBudget'); } },
               { icon: 'bar-chart', label: 'Reports', color: colors.accentPurple, screen: 'FinanceReports', action: () => { hapticFeedback('medium'); navigation.navigate('FinanceReports'); } },

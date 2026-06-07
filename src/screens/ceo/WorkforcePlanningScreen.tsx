@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -7,6 +7,7 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius, shadows } from '../../theme/spacing';
 import { Header, Card, Badge } from '../../components';
 import { StatCard } from '../../components/management';
+import { hapticFeedback } from '../../utils/haptics';
 
 export const WorkforcePlanningScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -29,13 +30,15 @@ export const WorkforcePlanningScreen: React.FC<any> = ({ navigation }) => {
             { role: 'Sales Manager', department: 'Sales', stage: 'Offer', candidates: 2 },
             { role: 'Marketing Analyst', department: 'Marketing', stage: 'Sourcing', candidates: 20 },
           ].map((position, i) => (
-            <Card key={i} style={styles.positionCard} padding="md">
-              <View style={styles.positionHeader}>
-                <Text style={styles.positionRole}>{position.role}</Text>
-                <Badge text={position.stage} variant={position.stage === 'Offer' ? 'success' : position.stage === 'Interview' ? 'primary' : 'warning'} size="small" />
-              </View>
-              <Text style={styles.positionDept}>{position.department} • {position.candidates} candidates</Text>
-            </Card>
+            <TouchableOpacity key={i} activeOpacity={0.7} onPress={() => { hapticFeedback('light'); navigation.navigate('CEODiversity'); }}>
+              <Card style={styles.positionCard} padding="md">
+                <View style={styles.positionHeader}>
+                  <Text style={styles.positionRole}>{position.role}</Text>
+                  <Badge text={position.stage} variant={position.stage === 'Offer' ? 'success' : position.stage === 'Interview' ? 'primary' : 'warning'} size="small" />
+                </View>
+                <Text style={styles.positionDept}>{position.department} • {position.candidates} candidates</Text>
+              </Card>
+            </TouchableOpacity>
           ))}
         </View>
 

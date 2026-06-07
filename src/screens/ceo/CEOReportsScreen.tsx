@@ -23,7 +23,7 @@ export const CEOReportsScreen: React.FC<any> = ({ navigation }) => {
       <Header title="Executive Reports" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {reports.map((report, i) => (
-          <TouchableOpacity key={i} style={[styles.reportCard, shadows.sm]} onPress={() => hapticFeedback('medium')} activeOpacity={0.7}>
+          <TouchableOpacity key={i} style={[styles.reportCard, shadows.sm]} onPress={() => { hapticFeedback('medium'); navigation.navigate('HRReportDetail', { report }); }} activeOpacity={0.7}>
             <View style={[styles.reportIcon, { backgroundColor: `${report.color}15` }]}>
               <Ionicons name={report.icon} size={24} color={report.color} />
             </View>
